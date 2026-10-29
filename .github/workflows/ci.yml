@@ -31,7 +31,7 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Build and verify backend
-        run: mvn --batch-mode clean verify
+        run: ./mvnw --batch-mode clean verify
 
       - name: Upload test results
         if: always()

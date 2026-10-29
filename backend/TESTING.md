@@ -16,7 +16,7 @@ added. Neither is a business unit test. They use the default mock web environmen
 
 ## Frameworks and commands
 
-Use JDK 21 and Maven. `spring-boot-starter-webmvc-test` already supplies Spring
+Use JDK 21 and the checked-in Maven wrapper. `spring-boot-starter-webmvc-test` already supplies Spring
 Boot Test, AssertJ, JUnit Jupiter, and Mockito; no duplicate dependencies are
 needed. The existing Spring Boot `4.2.0-SNAPSHOT` dependency is retained. Its
 current dependency management resolves JUnit Jupiter 6, using the same
@@ -27,22 +27,22 @@ on a fresh machine and can change between builds.
 From `backend/`:
 
 ```sh
-mvn test
-mvn verify
-mvn -Dtest=BackendApplicationTests test
+./mvnw test
+./mvnw verify
+./mvnw -Dtest=BackendApplicationTests test
 ```
 
 Surefire results are in `target/surefire-reports/`. Maven may need network access
 to download build dependencies, but the tests themselves do not use the network.
-The checked-in wrapper is currently configured for Maven 3.10.0; the commands
-above use installed Maven and do not depend on that distribution being available.
+The checked-in wrapper selects Maven 3.10.0 and downloads it on first use.
+On Windows, use `.\mvnw.cmd` in place of `./mvnw`. No installed Maven is required.
 
 ## Coverage
 
 JaCoCo 0.8.14 attaches its agent before tests and generates HTML, XML, and CSV
-reports during `mvn verify`. Open `target/site/jacoco/index.html`; automation can
-read `target/site/jacoco/jacoco.xml`. `mvn test` records execution data but does
-not generate the report. Use `mvn clean verify` when you need a fresh report
+reports during `./mvnw verify`. Open `target/site/jacoco/index.html`; automation can
+read `target/site/jacoco/jacoco.xml`. `./mvnw test` records execution data but does
+not generate the report. Use `./mvnw clean verify` when you need a fresh report
 without execution data from previous runs.
 
 There is no coverage threshold or production-code exclusion. Coverage currently
@@ -69,7 +69,7 @@ there is no service or repository to test.
 Future database integration tests should use `*IT` names and a separate Maven
 Failsafe profile with a disposable PostgreSQL database. Configure that profile
 before adding such tests: it is not present today. Keep real database credentials
-out of source control and keep `mvn test` independent of PostgreSQL.
+out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
@@ -84,7 +84,7 @@ the real production API, mock actual dependencies, resolve any documented policy
 questions, then remove its class-level `@Disabled`. Removing only `@Disabled`
 will fail the build, so unfinished cases cannot accidentally appear green. Remove
 the `pending` tag when the class is complete. For example, run
-`mvn -Dtest=EstimatedOneRepMaxPendingTests test` while developing it.
+`./mvnw -Dtest=EstimatedOneRepMaxPendingTests test` while developing it.
 
 Pending cases by area: workouts 14, 1RM 8, volume 7, records 8, recommendations
 11, consistency 14, authentication/authorization 11, validation/errors 5.
@@ -128,7 +128,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 `.github/workflows/ci.yml` runs on pushes to `main`, pull requests targeting
 `main`, and manual `workflow_dispatch` runs. It uses Temurin Java 21 and Maven
 dependency caching keyed by `backend/pom.xml`, then runs
-`mvn --batch-mode clean verify` from `backend/`.
+`./mvnw --batch-mode clean verify` from `backend/`.
 
 Compilation errors and enabled test failures fail the job. The 78 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
@@ -144,16 +144,22 @@ The workflow follows the setup and caching pattern in
 The existing Spring Boot snapshot parent is retained; dependency versions can
 change between builds.
 
-## Verified baseline (October 26, 2026)
+## Verified wrapper baseline (October 29, 2026)
 
-Both `mvn test` and `mvn -B verify` passed with Maven 3.9.15 and JDK 25
+`./mvnw --batch-mode clean verify` passed with wrapper Maven 3.10.0 and
+Temurin JDK 21.0.1: 80 discovered tests, 2 passed, 78 skipped, zero failures
+or errors. The executable JAR and JaCoCo report were generated successfully.
+
+## Historical baseline (October 26, 2026)
+
+Both `./mvnw test` and `./mvnw -B verify` passed with Maven 3.9.15 and JDK 25
 (compiling for Java 21). Each ran two tests with zero failures, errors or skips.
 A JDK 21 runtime was not available locally, so that runtime still needs CI
 verification. JaCoCo generated all three report formats: 1/3 lines (33.3%),
 3/8 instructions (37.5%), 1/2 methods (50%), and no branches. Only the
 bootstrap class exists; `main` is not exercised by the context tests.
 
-After adding the pending feature contracts, both `mvn -B test` and
-`mvn -B verify` passed: 80 discovered, 2 passed, 78 skipped, zero failures or
+After adding the pending feature contracts, both `./mvnw -B test` and
+`./mvnw -B verify` passed: 80 discovered, 2 passed, 78 skipped, zero failures or
 errors. Coverage remains 33.3% of bootstrap lines; pending cases provide no
 feature coverage.

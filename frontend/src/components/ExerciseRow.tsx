@@ -78,7 +78,7 @@ export function ExerciseRow({
       <View style={styles.setCard}>
         <View style={styles.tableHeader}>
           <Text style={styles.columnLabel}>SET</Text>
-          <Text style={styles.columnLabel}>KG</Text>
+          <Text style={styles.columnLabel}>LB</Text>
           <Text style={styles.columnLabel}>REPS</Text>
           <Text style={styles.columnLabel}>DONE</Text>
         </View>

@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "SpotMe",
+    "slug": "spotme-beta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.spotme.beta" },
+    "android": { "package": "com.spotme.beta" },
+    "web": { "bundler": "metro", "output": "single" },
+    "plugins": ["expo-secure-store"]
+  }
+}

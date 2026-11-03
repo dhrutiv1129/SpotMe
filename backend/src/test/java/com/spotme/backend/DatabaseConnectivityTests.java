@@ -22,6 +22,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * (the same one referenced in application.yml).
  */
 @SpringBootTest
+@org.springframework.test.context.ActiveProfiles("postgres")
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "RUN_POSTGRES_TESTS", matches = "true")
 class DatabaseConnectivityTests {
 
     @Autowired

@@ -2,10 +2,9 @@
 
 ## What exists today
 
-The backend currently contains only `BackendApplication` and
-`application.yaml`. There are no controllers, services, repositories, domain
-models, calculators, validators, or custom exception handlers. The repository
-also has no frontend or Python video analysis component.
+The backend contains the application scaffold and standalone workout validation
+under `com.spotme.workout`. There are no controllers, persistence adapters, or
+frontend yet. The validator is not wired into an HTTP endpoint.
 
 `src/test/java/com/spotme/backend/BackendApplicationTests.java` contains two
 Spring context smoke tests: application configuration registers the entry-point
@@ -163,3 +162,27 @@ After adding the pending feature contracts, both `./mvnw -B test` and
 `./mvnw -B verify` passed: 80 discovered, 2 passed, 78 skipped, zero failures or
 errors. Coverage remains 33.3% of bootstrap lines; pending cases provide no
 feature coverage.
+
+## Workout validation contract
+
+`WorkoutValidatorTests` exercises the real validator without Spring or a database.
+Run `./mvnw -Dtest=WorkoutValidatorTests test` from `backend/`.
+
+Construct `WorkoutValidator` with an `ExerciseCatalog` adapter and a `Clock` in the
+application/user date zone. The database teammate supplies `findById`, returning
+empty for unknown IDs and trusted `supportsBodyweight` metadata for known IDs.
+Catalog infrastructure failures propagate rather than becoming input errors.
+No production adapter or Spring bean registration is included yet.
+
+`WorkoutRequest` contains `date`, `exercises`, and per-exercise `exerciseId` and
+`sets`. Sets contain integer `reps` and decimal `weight`; list order represents
+exercise and set order. Agree on a single weight unit with the UI/database team.
+
+Validation rejects missing inputs, empty exercise/set lists, invalid or unknown
+exercise IDs, nonpositive reps, negative weights, and dates after today according
+to the injected clock. Zero weight is accepted only for catalog-defined bodyweight
+exercises; positive added resistance is allowed for them. Today and past dates
+are accepted. Errors are collected into `WorkoutValidationException.violations()`
+with indexed field paths, stable codes, and readable messages. There is no HTTP
+error mapping or persistence in this PR. Existing pending feature contracts remain
+disabled until their service/controller APIs exist.

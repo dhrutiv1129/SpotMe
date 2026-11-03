@@ -8,8 +8,9 @@ import {
   View,
 } from 'react-native';
 import {Button, NumberField, Sheet} from '../components/WorkoutControls';
-import {ExerciseRow} from '../components/ExerciseRow';
 import type {ExerciseView, LoggedSet} from '../components/ExerciseRow';
+import {WorkoutForm, validateSetInput} from '../components/WorkoutForm';
+import type {SetInput} from '../components/WorkoutForm';
 import {colors} from '../theme';
 
 export type {LoggedSet} from '../components/ExerciseRow';
@@ -25,11 +26,6 @@ export interface WorkoutView {
   exercise: ExerciseView;
   restLabel?: string;
   nextExercise?: {id: string; name: string; targetLabel: string};
-}
-
-interface SetInput {
-  weight: number;
-  reps: number;
 }
 
 interface Props {
@@ -59,23 +55,6 @@ interface Props {
   onResume: (sessionId: string) => Promise<void>;
   onDiscard: (sessionId: string) => Promise<void>;
   onSaveForLater: (sessionId: string) => Promise<void>;
-}
-
-function fieldErrors(weight: string, reps: string) {
-  return {
-    weight:
-      weight.trim() === '' ||
-      !Number.isFinite(Number(weight)) ||
-      Number(weight) < 0
-        ? 'Weight must be non-negative.'
-        : undefined,
-    reps:
-      reps.trim() === '' ||
-      !Number.isSafeInteger(Number(reps)) ||
-      Number(reps) <= 0
-        ? 'Reps must be a positive whole number.'
-        : undefined,
-  };
 }
 
 /** Server response drives totals and status; only form drafts and dialogs live here. */
@@ -121,9 +100,8 @@ function ActiveWorkout({
   const nextExercise = workout.nextExercise;
   const [weight, setWeight] = useState(exercise.draft.weight);
   const [reps, setReps] = useState(exercise.draft.reps);
-  const [touched, setTouched] = useState(false);
   const [sheet, setSheet] = useState<
-    'paused' | 'edit' | 'remove' | 'discard' | null
+    'paused' | 'edit' | 'remove' | 'discard' | 'incomplete' | 'empty' | null
   >(workout.status === 'paused' ? 'paused' : null);
   const [selectedSet, setSelectedSet] = useState<LoggedSet | null>(null);
   const [editWeight, setEditWeight] = useState('');
@@ -131,13 +109,20 @@ function ActiveWorkout({
   const [busy, setBusy] = useState(false);
   const writeInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  const errors = fieldErrors(weight, reps);
-  const editErrors = fieldErrors(editWeight, editReps);
+  const editErrors = validateSetInput(editWeight, editReps);
   const editInvalid = !!editErrors.weight || !!editErrors.reps;
   const editUnchanged =
     !!selectedSet &&
     Number(editWeight) === selectedSet.weight &&
     Number(editReps) === selectedSet.reps;
+  const sheetTitles = {
+    paused: 'Workout paused',
+    edit: 'Edit logged set',
+    remove: 'Remove logged set?',
+    discard: 'Discard workout?',
+    incomplete: `Finish with ${workout.completedSets} of ${workout.totalSets} sets?`,
+    empty: 'No sets logged yet',
+  };
 
   async function submit(action: () => Promise<void>, after?: () => void) {
     if (writeInFlight.current) return;
@@ -239,46 +224,24 @@ function ActiveWorkout({
           </Text>
         </View>
 
-        <ExerciseRow
+        <WorkoutForm
           exercise={exercise}
           weight={weight}
           reps={reps}
-          onWeightChange={(value) => {
-            setTouched(true);
-            setWeight(value);
-          }}
-          onRepsChange={(value) => {
-            setTouched(true);
-            setReps(value);
-          }}
-          weightError={touched ? errors.weight : undefined}
-          repsError={touched ? errors.reps : undefined}
-          disabled={busy || workout.status === 'paused'}
+          onWeightChange={setWeight}
+          onRepsChange={setReps}
+          disabled={workout.status === 'paused'}
+          busy={busy}
+          error={sheet ? undefined : error ?? undefined}
           onEditSet={openEdit}
           onSwap={actions.onSwap}
           onGuide={actions.onGuide}
+          onSubmit={(input) => {
+            void submit(() =>
+              actions.onLogSet(workout.sessionId, exercise.id, input),
+            );
+          }}
         />
-
-        {!sheet && errorNotice}
-        {exercise.nextSetNumber !== null && (
-          <Button
-            label={`Log set ${exercise.nextSetNumber}  ✓`}
-            busy={busy}
-            disabled={
-              workout.status === 'paused' || !!errors.weight || !!errors.reps
-            }
-            onPress={() => {
-              setTouched(true);
-              if (errors.weight || errors.reps) return;
-              void submit(() =>
-                actions.onLogSet(workout.sessionId, exercise.id, {
-                  weight: Number(weight),
-                  reps: Number(reps),
-                }),
-              );
-            }}
-          />
-        )}
         {!!workout.restLabel && (
           <View style={styles.rest}>
             <Text style={styles.link}>◷ Rest timer · {workout.restLabel}</Text>
@@ -327,25 +290,61 @@ function ActiveWorkout({
         <Button
           label={`Review & finish · ${workout.completedSets} logged · ${workout.pendingSets} pending`}
           variant="text"
-          disabled={busy}
-          onPress={actions.onReview}
+          disabled={busy || workout.status === 'paused'}
+          onPress={() => {
+            setError(null);
+            if (workout.completedSets === 0) {
+              setSheet('empty');
+            } else if (workout.pendingSets > 0) {
+              setSheet('incomplete');
+            } else {
+              actions.onReview();
+            }
+          }}
         />
       </ScrollView>
 
       {sheet && (
         <Sheet
-          title={
-            sheet === 'paused'
-              ? 'Workout paused'
-              : sheet === 'discard'
-                ? 'Discard workout?'
-                : sheet === 'remove'
-                  ? 'Remove logged set?'
-                  : 'Edit logged set'
-          }
+          title={sheetTitles[sheet]}
           onClose={closeSheet}
           locked={busy || workout.status === 'paused'}
         >
+          {sheet === 'incomplete' && (
+            <>
+              <Text style={styles.body}>
+                {workout.pendingSets} sets are unfinished. Draft entries aren’t
+                logged and won’t be saved as completed.
+              </Text>
+              <Button label="Keep training" onPress={closeSheet} />
+              <Button
+                label={`Review & finish ${workout.completedSets} completed sets`}
+                variant="secondary"
+                onPress={() => {
+                  closeSheet();
+                  actions.onReview();
+                }}
+              />
+              <Text style={styles.caption}>
+                Only logged sets go to review. Your workout stays unsaved until
+                saving succeeds.
+              </Text>
+            </>
+          )}
+          {sheet === 'empty' && (
+            <>
+              <Text style={styles.body}>
+                Log at least one set before finishing. Your draft inputs haven’t
+                been counted as completed work.
+              </Text>
+              <Button label="Keep training" onPress={closeSheet} />
+              <Button
+                label="Discard workout"
+                variant="secondary"
+                onPress={() => setSheet('discard')}
+              />
+            </>
+          )}
           {sheet === 'paused' && (
             <>
               <Text style={styles.body}>
@@ -390,7 +389,8 @@ function ActiveWorkout({
               <View style={styles.notice}>
                 <Text style={styles.sectionTitle}>{workout.name}</Text>
                 <Text style={styles.body}>
-                  Paused · {workout.completedSets} logged sets ·{' '}
+                  {workout.status === 'paused' ? 'Paused' : 'In progress'} ·{' '}
+                  {workout.completedSets} logged sets ·{' '}
                   {workout.elapsedLabel}
                 </Text>
               </View>
@@ -416,7 +416,7 @@ function ActiveWorkout({
                 disabled={busy}
                 onPress={() => {
                   setError(null);
-                  setSheet('paused');
+                  setSheet(workout.status === 'paused' ? 'paused' : null);
                 }}
               />
             </>

@@ -8,20 +8,8 @@ import org.junit.jupiter.api.Test;
 
 /** Planned behavior only: replace each failure with calls to real production code. */
 @Tag("pending")
-@Disabled("ValidationAndErrors production API is not implemented; see TESTING.md before enabling")
+@Disabled("Resource services and HTTP error mapping are not implemented; see TESTING.md before enabling")
 class ValidationAndErrorsPendingTests {
-
-    @Test
-    void rejectsInvalidInput() {
-        // Arrange / Act / Assert contract to implement once the production API exists.
-        fail("Call a real validator with an invalid value; assert its documented field and error code.");
-    }
-
-    @Test
-    void rejectsMissingRequiredValues() {
-        // Arrange / Act / Assert contract to implement once the production API exists.
-        fail("Omit each required value independently; assert its documented validation error.");
-    }
 
     @Test
     void reportsMissingResource() {

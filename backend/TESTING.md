@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 45 disabled JUnit cases in five `*PendingTests`
+The table below is backed by 36 disabled JUnit cases in five `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -86,7 +86,7 @@ the `pending` tag when the class is complete. For example, run
 `./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
 
 Pending cases by area: workouts 6, recommendations
-11, consistency 14, authentication/authorization 11, validation/errors 3.
+11, consistency 5, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 45 intentionally
+Compilation errors and enabled test failures fail the job. The 36 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -343,3 +343,27 @@ also checks the all-set read path. Run
 Current suite: 73 passing cases, 45 pending contracts. Earlier PR counts in this
 file are historical. HTTP endpoints and frontend integration remain follow-up
 work.
+
+## Consistency calculators (PR 7)
+
+`StreakCalculator` counts consecutive active local calendar dates. Multiple
+workouts on a date count as one active day. A current streak is anchored by a
+workout today or yesterday in the injected clock's zone; if the latest date is
+older, current streak is zero. The longest streak is historical. Missing or
+future completed dates are rejected. The caller must supply already resolved
+local workout dates; instant-to-user-zone conversion belongs at the ingestion
+boundary and remains pending.
+
+`FrequencyCalculator` counts workout sessions, so two workouts on one date
+contribute two to frequency. Weekly buckets start on Monday and are keyed by
+that Monday date; monthly buckets use `YearMonth`. Both return sorted immutable
+maps. Empty history yields empty maps. These calculators use only dates and do
+not read the database or construct calendar/heatmap output.
+
+Eight `ConsistencyCalculatorTests` replace nine covered placeholders, checking
+current/longest streaks, duplicates, gaps, leap day, local date anchoring,
+Monday/year and month boundaries, empty history, and malformed input. Five
+pending consistency contracts remain for ingestion timezone conversion and
+calendar/heatmap integration. Run `./mvnw -Dtest=ConsistencyCalculatorTests test`.
+Current suite: 81 passing cases and 36 pending contracts. Earlier counts in this
+file describe prior PR baselines.

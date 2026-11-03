@@ -24,7 +24,6 @@ export interface WorkoutHistoryView {
     }>;
   }>;
   moreLabel?: string;
-  footerLabel: string;
 }
 
 interface Props {
@@ -40,11 +39,10 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
         <Image source={require('../assets/back.png')} style={styles.backIcon} />
-        <Text style={styles.backLabel}>Your progress</Text>
+        <Text style={styles.backLabel}>Progress</Text>
       </Pressable>
       <View style={styles.heading}>
-        <Text accessibilityRole="header" style={styles.title}>Every session, saved.</Text>
-        <Text style={styles.body}>Your workout history, newest first.</Text>
+        <Text accessibilityRole="header" style={styles.title}>Workout history</Text>
       </View>
       <View style={styles.summary}>
         <View style={styles.metric}>
@@ -86,7 +84,6 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
         </View>
       ))}
       {!!history.moreLabel && !!onLoadMore && <Button label={history.moreLabel} variant="secondary" onPress={onLoadMore} />}
-      <Text style={styles.body}>{history.footerLabel}</Text>
     </ScrollView>
   );
 }

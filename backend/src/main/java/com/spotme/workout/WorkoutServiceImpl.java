@@ -53,16 +53,19 @@ public final class WorkoutServiceImpl implements WorkoutService {
     if (exerciseId <= 0) {
       throw new IllegalArgumentException("Exercise ID must be positive");
     }
+    return getAllSetHistory().stream()
+        .filter(set -> set.exerciseId() == exerciseId).toList();
+  }
+
+  @Override
+  public List<SetHistoryEntry> getAllSetHistory() {
     List<SetHistoryEntry> result = new ArrayList<>();
     for (var workout : getWorkoutHistory()) {
       for (int i = 0; i < workout.exercises().size(); i++) {
         var exercise = workout.exercises().get(i);
-        if (exercise.exerciseId() != exerciseId) {
-          continue;
-        }
         for (int j = 0; j < exercise.sets().size(); j++) {
           var set = exercise.sets().get(j);
-          result.add(new SetHistoryEntry(workout.id(), workout.date(), exerciseId,
+          result.add(new SetHistoryEntry(workout.id(), workout.date(), exercise.exerciseId(),
               i + 1, j + 1, set.reps(), set.weight()));
         }
       }

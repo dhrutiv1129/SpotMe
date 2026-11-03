@@ -318,3 +318,28 @@ and invalid data. Run `./mvnw -Dtest=PersonalRecordFinderTests test` from `backe
 Current suite: 67 passing cases, 45 pending contracts. Counts in earlier PR sections
 are historical. Analytics orchestration, authenticated history loading, HTTP
 endpoints, and frontend display remain integration work.
+
+## Strength analytics service (PR 6)
+
+`StrengthAnalyticsServiceImpl` reads the authenticated user's sets through
+`WorkoutService`. `getExerciseProgress(exerciseId)` groups sets by workout,
+returns one point per workout sorted by date and ID, and includes external-load
+volume, that workout's maximum estimated 1RM, and the change from the preceding
+workout. The first point has no change. If either adjacent workout has only
+zero-external-load sets, the change is absent. Personal records for that exercise
+are returned alongside the points. Empty history returns empty points and records.
+
+`getPersonalRecords()` reads all sets through the newly added
+`WorkoutService.getAllSetHistory()` and passes them to `PersonalRecordFinder`.
+The workout service derives ownership from `CurrentUser` and rejects a reader
+returning another user's workout. Callers cannot supply a user ID to analytics.
+The database history adapter remains required to make this operational.
+
+Six `StrengthAnalyticsServiceTests` cover chronological points, per-session
+volume and 1RM changes, same-day ordering, bodyweight and empty history, records
+across exercises, invalid IDs, and upstream failures. The workout history test
+also checks the all-set read path. Run
+`./mvnw -Dtest=StrengthAnalyticsServiceTests,WorkoutHistoryTests test`.
+Current suite: 73 passing cases, 45 pending contracts. Earlier PR counts in this
+file are historical. HTTP endpoints and frontend integration remain follow-up
+work.

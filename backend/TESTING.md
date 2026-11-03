@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 36 disabled JUnit cases in five `*PendingTests`
+The table below is backed by 33 disabled JUnit cases in five `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -86,7 +86,7 @@ the `pending` tag when the class is complete. For example, run
 `./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
 
 Pending cases by area: workouts 6, recommendations
-11, consistency 5, authentication/authorization 11, validation/errors 3.
+11, consistency 2, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 36 intentionally
+Compilation errors and enabled test failures fail the job. The 33 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -367,3 +367,23 @@ pending consistency contracts remain for ingestion timezone conversion and
 calendar/heatmap integration. Run `./mvnw -Dtest=ConsistencyCalculatorTests test`.
 Current suite: 81 passing cases and 36 pending contracts. Earlier counts in this
 file describe prior PR baselines.
+
+## Consistency service and calendar (PR 8)
+
+`ConsistencyServiceImpl` reads owner-scoped workouts through
+`WorkoutService.getWorkoutHistory()`. Its summary counts all sessions by week
+and month and calculates current/longest daily streaks using an injected clock.
+A month calendar returns every date in order, including inactive days, with
+session count, sorted workout IDs for navigation, and heatmap intensity capped
+at five. Two sessions on one date contribute two to frequency/intensity but one
+active day to streaks. Results are immutable. Duplicate workout IDs, invalid
+or future completed dates, and null history are rejected.
+
+Seven `ConsistencyServiceTests` cover summary and calendar data, multiple
+sessions, leap day, inactive dates, capped intensity, empty history,
+authentication failures and malformed data. Three covered placeholders were
+removed; two remain for completion-date ingestion and timezone conversion.
+Run `./mvnw -Dtest=ConsistencyServiceTests test` from `backend/`.
+Current suite: 88 passing cases, 33 pending contracts. Earlier PR counts above
+are historical. Database and authentication adapters, API endpoints, and the
+frontend calendar/heatmap still need integration.

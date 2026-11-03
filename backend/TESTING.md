@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 33 disabled JUnit cases in five `*PendingTests`
+The table below is backed by 24 disabled JUnit cases in five `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -86,7 +86,7 @@ the `pending` tag when the class is complete. For example, run
 `./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
 
 Pending cases by area: workouts 6, recommendations
-11, consistency 2, authentication/authorization 11, validation/errors 3.
+2, consistency 2, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 33 intentionally
+Compilation errors and enabled test failures fail the job. The 24 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -387,3 +387,24 @@ Run `./mvnw -Dtest=ConsistencyServiceTests test` from `backend/`.
 Current suite: 88 passing cases, 33 pending contracts. Earlier PR counts above
 are historical. Database and authentication adapters, API endpoints, and the
 frontend calendar/heatmap still need integration.
+
+## Exercise recommendation rules (PR 9)
+
+`AlternativeFilter` accepts trusted catalog options, candidate relationship
+relevance, available equipment tags, and a beginner-only flag. It excludes the
+original exercise, requires at least one shared target-muscle tag, requires every
+piece of a candidate's equipment to be available, and optionally restricts
+results to BEGINNER difficulty. Equipment-free exercises require no tags. Tags
+are exact catalog-defined strings; catalog ingestion must normalize them.
+
+`DifficultyRanker` returns at most three candidates, sorted by difficulty
+(BEGINNER, INTERMEDIATE, ADVANCED), descending relevance (0–100), then exercise
+ID for stable ties. It returns fewer when fewer qualify and never fabricates
+options. Seven `RecommendationRulesTests` cover matching, equipment sets,
+beginner suitability, ranking and ties, fewer/none, and malformed metadata.
+Nine corresponding pending contracts were removed; two remain for missing or
+invalid exercise lookup in the future service. Run
+`./mvnw -Dtest=RecommendationRulesTests test` from `backend/`.
+Current suite: 95 passing cases, 24 pending contracts. Earlier counts in this
+file describe prior PR baselines. Catalog loading, recommendation endpoints,
+and frontend selection remain for integration work.

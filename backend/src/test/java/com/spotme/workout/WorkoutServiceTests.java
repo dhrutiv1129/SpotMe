@@ -29,7 +29,7 @@ class WorkoutServiceTests {
   private final ExerciseCatalog catalog = mock(ExerciseCatalog.class);
   private final WorkoutValidator validator = new WorkoutValidator(catalog,
       Clock.fixed(Instant.parse("2026-11-02T12:00:00Z"), ZoneOffset.UTC));
-  private final WorkoutService service = new WorkoutServiceImpl(user, validator, store);
+  private final WorkoutService service = new WorkoutServiceImpl(user, validator, store, mock(WorkoutHistoryReader.class));
 
   private void authenticated() {
     when(user.requireUserId()).thenReturn(7L);

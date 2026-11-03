@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 69 disabled JUnit cases in eight `*PendingTests`
+The table below is backed by 68 disabled JUnit cases in eight `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -85,7 +85,7 @@ will fail the build, so unfinished cases cannot accidentally appear green. Remov
 the `pending` tag when the class is complete. For example, run
 `./mvnw -Dtest=EstimatedOneRepMaxPendingTests test` while developing it.
 
-Pending cases by area: workouts 7, 1RM 8, volume 7, records 8, recommendations
+Pending cases by area: workouts 6, 1RM 8, volume 7, records 8, recommendations
 11, consistency 14, authentication/authorization 11, validation/errors 3.
 The two smoke tests, 24 validation cases, and 28 creation-service cases are enabled. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 69 intentionally
+Compilation errors and enabled test failures fail the job. The 68 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -230,3 +230,26 @@ All 20 invalid-input cases also run through the creation service and verify that
 storage is never called. Remaining placeholders cover unimplemented update/delete,
 history, cross-user access, resource errors, HTTP mapping, and other feature modules.
 Historical baseline counts above describe earlier runs, not the current suite.
+
+## Workout history (PR 3)
+
+`WorkoutService` now exposes `getWorkoutHistory`, `getSetHistory(exerciseId)`,
+and `getWorkoutDates` for the authenticated user only. The constructor additionally
+requires `WorkoutHistoryReader`. Its database adapter must query by owner ID and
+return fully loaded immutable `WorkoutResponse` DTOs with trusted owner metadata.
+The service fails closed if any returned owner differs from the current user.
+
+History is ordered by date descending, then workout ID descending. Set history
+filters by positive exercise ID and preserves workout/exercise/set order, using
+one-based exercise and set positions. Dates are distinct and sorted ascending;
+multiple sessions on a day remain separate in full history. Unknown positive
+exercise IDs produce empty set history when no stored sets match. No exercise
+catalog lookup is needed to read saved history. Calculators decide frequency and
+streak rules; this layer does not calculate them.
+
+Ten `WorkoutHistoryTests` cover ordering, stored values, empty results, filtering,
+immutable lists, distinct dates, invalid inputs, authentication, owner mismatch,
+and database failures. The completed-history placeholder has been removed.
+Current totals: 64 passing cases and 68 pending contracts. Database adapters,
+SQL-level ownership tests, pagination, HTTP endpoints, and detail-by-ID retrieval
+are not implemented. This is not yet operational history in the app.

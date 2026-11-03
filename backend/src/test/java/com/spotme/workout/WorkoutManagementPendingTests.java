@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 /** Planned behavior only: replace each failure with calls to real production code. */
 @Tag("pending")
-@Disabled("Remaining workout update/delete/history APIs are not implemented; see TESTING.md before enabling")
+@Disabled("Remaining workout update/delete/detail APIs are not implemented; see TESTING.md before enabling")
 class WorkoutManagementPendingTests {
 
     @Test
@@ -33,12 +33,6 @@ class WorkoutManagementPendingTests {
     void deletesOwnedWorkout() {
         // Arrange / Act / Assert contract to implement once the production API exists.
         fail("Mock an owned existing workout; delete it; verify deletion of that ID.");
-    }
-
-    @Test
-    void retrievesCompletedWorkouts() {
-        // Arrange / Act / Assert contract to implement once the production API exists.
-        fail("Mock completed workouts for the current user; retrieve history; assert the stored sets and exercise details are returned.");
     }
 
     @Test

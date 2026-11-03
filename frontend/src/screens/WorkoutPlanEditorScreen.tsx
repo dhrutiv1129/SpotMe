@@ -13,7 +13,7 @@ interface Props {
   plan: EditableWorkoutPlan;
   dateLabel: string;
   onSave: (plan: EditableWorkoutPlan) => Promise<EditableWorkoutPlan>;
-  onStartWorkout: (planId: string) => Promise<void>;
+  onSaved: (plan: EditableWorkoutPlan) => void;
   onCancel: () => void;
 }
 
@@ -29,13 +29,13 @@ function positiveInteger(value: string) {
   return value.trim() !== '' && Number.isSafeInteger(Number(value)) && Number(value) > 0;
 }
 
-/** Edit targets, wait for save acknowledgement, then start the saved plan. */
+/** Edits set and rep targets and returns after the plan is saved. */
 export function WorkoutPlanEditorScreen({
-  plan, dateLabel, onSave, onStartWorkout, onCancel,
+  plan, dateLabel, onSave, onSaved, onCancel,
 }: Props) {
   const [savedPlan, setSavedPlan] = useState(plan);
   const [draft, setDraft] = useState(() => createDraft(plan));
-  const [busy, setBusy] = useState<'save' | 'start' | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const writeInFlight = useRef(false);
   const changed = JSON.stringify(draft) !== JSON.stringify(createDraft(savedPlan));
@@ -47,31 +47,31 @@ export function WorkoutPlanEditorScreen({
     setDraft((rows) => rows.map((row) => row.id === id ? {...row, [field]: value} : row));
   }
 
-  async function run(action: 'save' | 'start') {
-    if (writeInFlight.current || invalid || (action === 'start' && changed)) return;
+  async function save() {
+    if (writeInFlight.current || invalid || !changed) return;
     writeInFlight.current = true;
-    setBusy(action);
+    setBusy(true);
     setError(null);
     try {
-      if (action === 'save') {
-        const response = await onSave({
-          ...savedPlan,
-          exercises: savedPlan.exercises.map((exercise, index) => ({
-            ...exercise,
-            sets: Number(draft[index].sets),
-            reps: Number(draft[index].reps),
-          })),
-        });
-        setSavedPlan(response);
-        setDraft(createDraft(response));
-      } else {
-        await onStartWorkout(savedPlan.id);
+      const response = await onSave({
+        ...savedPlan,
+        exercises: savedPlan.exercises.map((exercise, index) => ({
+          ...exercise,
+          sets: Number(draft[index].sets),
+          reps: Number(draft[index].reps),
+        })),
+      });
+      if (response.id !== savedPlan.id) {
+        throw new Error('The workout plan save could not be confirmed.');
       }
+      setSavedPlan(response);
+      setDraft(createDraft(response));
+      onSaved(response);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Please try again.');
     } finally {
       writeInFlight.current = false;
-      setBusy(null);
+      setBusy(false);
     }
   }
 
@@ -120,17 +120,9 @@ export function WorkoutPlanEditorScreen({
       <Button
         label="Save workout plan"
         disabled={!changed || invalid || !!busy}
-        busy={busy === 'save'}
-        onPress={() => {void run('save');}}
+        busy={busy}
+        onPress={() => {void save();}}
       />
-      {!changed && (
-        <Button
-          label="Start workout  →"
-          disabled={invalid || !!busy}
-          busy={busy === 'start'}
-          onPress={() => {void run('start');}}
-        />
-      )}
       <Button label="Cancel" variant="secondary" disabled={!!busy} onPress={onCancel} />
       <Text style={styles.body}>Changes update the plan, not past workout history.</Text>
     </ScrollView>

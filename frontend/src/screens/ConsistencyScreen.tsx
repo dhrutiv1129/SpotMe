@@ -15,6 +15,7 @@ export interface ConsistencyView {
 
 interface Props {
   consistency: ConsistencyView;
+  selectedDate?: string | null;
   onViewStrength: () => void;
   onViewHistory: () => void;
   onEditGoal: () => void;
@@ -24,7 +25,7 @@ interface Props {
 
 /** Shows the calendar, weekly goal and streak returned by the backend. */
 export function ConsistencyScreen({
-  consistency, onViewStrength, onViewHistory, onEditGoal, onChangeMonth, onViewDay,
+  consistency, selectedDate, onViewStrength, onViewHistory, onEditGoal, onChangeMonth, onViewDay,
 }: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -65,7 +66,7 @@ export function ConsistencyScreen({
           <Text style={styles.editLink}>Edit goal</Text>
         </Pressable>
       </View>
-      <CalendarView calendar={consistency.calendar} onChangeMonth={onChangeMonth} onViewDay={onViewDay} />
+      <CalendarView calendar={consistency.calendar} selectedDate={selectedDate} onChangeMonth={onChangeMonth} onViewDay={onViewDay} />
     </ScrollView>
   );
 }

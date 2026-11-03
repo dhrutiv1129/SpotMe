@@ -34,16 +34,18 @@ export interface WorkoutDetailView {
 interface Props {
   workout: WorkoutDetailView;
   onBackToHistory: () => void;
+  backLabel?: string;
+  onViewHistory?: () => void;
   onViewStrength?: () => void;
 }
 
 /** Shows the saved workout and completed sets. */
-export function WorkoutDetailScreen({workout, onBackToHistory, onViewStrength}: Props) {
+export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewStrength}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
         <Image source={require('../assets/back.png')} style={styles.backIcon} />
-        <Text style={styles.backLabel}>All workout history</Text>
+        <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
         <Text style={styles.date}>{workout.dateLabel}</Text>
@@ -93,7 +95,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, onViewStrength}: 
         ))}
       </View>
       {!!onViewStrength && <Button label="View strength progress" onPress={onViewStrength} />}
-      <Button label="Back to history" variant="secondary" onPress={onBackToHistory} />
+      <Button label="Back to history" variant="secondary" onPress={onViewHistory ?? onBackToHistory} />
     </ScrollView>
   );
 }

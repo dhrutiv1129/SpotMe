@@ -21,6 +21,7 @@ export interface WorkoutCalendar {
 
 interface Props {
   calendar: WorkoutCalendar;
+  selectedDate?: string | null;
   onChangeMonth: (monthId: string) => void;
   onViewDay: (date: string, sessionIds: readonly string[]) => void;
 }
@@ -28,7 +29,7 @@ interface Props {
 const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /** Shows workout dates and activity levels returned by the backend. */
-export function CalendarView({calendar, onChangeMonth, onViewDay}: Props) {
+export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.heading}>
@@ -65,11 +66,12 @@ export function CalendarView({calendar, onChangeMonth, onViewDay}: Props) {
                 key={day.date}
                 accessibilityRole="button"
                 accessibilityLabel={day.accessibilityLabel}
+                accessibilityState={{selected: day.date === selectedDate, disabled: day.isFuture || day.sessionIds.length === 0}}
                 disabled={day.isFuture || day.sessionIds.length === 0}
                 onPress={() => onViewDay(day.date, day.sessionIds)}
                 style={styles.cell}
               >
-                <View style={[styles.date, activityStyles[day.activity], day.isToday && styles.today]}>
+                <View style={[styles.date, activityStyles[day.activity], day.isToday && styles.today, day.date === selectedDate && styles.selected]}>
                   <Text style={[styles.dateText, day.activity === 'high' && styles.highText, day.isFuture && styles.futureText]}>{day.dayLabel}</Text>
                 </View>
               </Pressable>
@@ -82,7 +84,7 @@ export function CalendarView({calendar, onChangeMonth, onViewDay}: Props) {
         <View style={[styles.swatch, styles.light]} />
         <View style={[styles.swatch, styles.medium]} />
         <View style={[styles.swatch, styles.high]} />
-        <Text style={styles.legendText}>Today</Text>
+        <Text style={styles.legendText}>{selectedDate ? 'Selected' : 'Today'}</Text>
         <View style={styles.todayLegend} />
       </View>
     </View>
@@ -111,6 +113,7 @@ const styles = StyleSheet.create({
   highText: {color: colors.surface, fontWeight: '700'},
   futureText: {color: '#9AA196'},
   today: {borderColor: colors.green},
+  selected: {borderWidth: 2, borderColor: colors.ink},
   legend: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2},
   legendText: {color: colors.ink, fontSize: 12},
   swatch: {width: 12, height: 8, borderRadius: 2},

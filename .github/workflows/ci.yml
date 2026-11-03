@@ -31,6 +31,8 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Build and verify backend
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: ./mvnw --batch-mode clean verify
 
       - name: Upload test results

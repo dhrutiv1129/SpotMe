@@ -29,7 +29,6 @@ export interface StrengthProgressView {
 
 interface Props {
   progress: StrengthProgressView;
-  onBack: () => void;
   onViewHistory: () => void;
   onViewConsistency: () => void;
   onChooseExercise: () => void;
@@ -37,19 +36,16 @@ interface Props {
 }
 
 /** Shows strength results returned by the backend. */
-export function ProgressScreen({progress, onBack, onViewHistory, onViewConsistency, onChooseExercise, onViewSession}: Props) {
+export function ProgressScreen({progress, onViewHistory, onViewConsistency, onChooseExercise, onViewSession}: Props) {
   const weightScale = Math.max(progress.actualSet.weight, progress.estimatedSet.weight, 1);
   const repScale = Math.max(progress.actualSet.reps, progress.estimatedSet.reps, 1);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.between}>
-        <Pressable accessibilityRole="button" style={styles.back} onPress={onBack}>
-          <Image source={require('../assets/progress-back.png')} style={styles.headerIcon} />
-          <Text style={styles.backLabel}>Your progress</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="View workout history" onPress={onViewHistory} style={styles.iconButton}>
-          <Image source={require('../assets/calendar.png')} style={styles.headerIcon} />
+        <Text style={styles.headerLabel}>Your progress</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="View workout history" onPress={onViewHistory} style={styles.historyLink}>
+          <Text style={styles.link}>History</Text>
         </Pressable>
       </View>
       <Text accessibilityRole="header" style={styles.title}>Small steps. Real strength.</Text>
@@ -98,17 +94,14 @@ export function ProgressScreen({progress, onBack, onViewHistory, onViewConsisten
             <Text style={styles.greenCaption}>{progress.volumeChangeLabel}</Text>
           </View>
           <View style={styles.performanceCard}>
-            <View style={styles.recordLabel}><Image source={require('../assets/trophy.png')} style={styles.trophy} /><Text style={styles.caption}>Best set</Text></View>
+            <View style={styles.recordLabel}><Image source={require('../assets/trophy.png')} style={styles.trophy} /><Text style={styles.caption}>Personal best</Text></View>
             <Text style={styles.value}>{progress.bestSetLabel}</Text>
             <Text style={styles.greenCaption}>{progress.bestSetDateLabel}</Text>
           </View>
         </View>
       </View>
       <View style={styles.section}>
-        <View style={styles.between}>
-          <Text style={[styles.sectionTitle, styles.recentTitle]}>Recent {progress.exerciseName.toLowerCase()} sessions</Text>
-          <Pressable accessibilityRole="button" onPress={onViewHistory} style={styles.historyLink}><Text style={styles.link}>All workouts →</Text></Pressable>
-        </View>
+        <Text style={styles.sectionTitle}>Recent sessions</Text>
         {progress.recentSessions.map((session) => (
           <Pressable key={session.sessionId} accessibilityRole="button" accessibilityLabel={`View workout from ${session.dateLabel}`} onPress={() => onViewSession(session.sessionId)} style={styles.session}>
             <Text style={styles.sessionDate}>{session.dateLabel}</Text>
@@ -125,10 +118,7 @@ const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   between: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10},
-  back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10},
-  headerIcon: {width: 22, height: 22},
-  backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
-  iconButton: {minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center'},
+  headerLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   title: {color: colors.ink, fontSize: 32, fontWeight: '700', lineHeight: 36},
   tabs: {backgroundColor: colors.soft, borderRadius: 14, padding: 4, flexDirection: 'row', gap: 4},
   tab: {flex: 1, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 11},
@@ -162,9 +152,8 @@ const styles = StyleSheet.create({
   trophy: {width: 15, height: 15},
   value: {color: colors.ink, fontSize: 26, fontWeight: '700'},
   greenCaption: {color: colors.green, fontSize: 11, fontWeight: '600'},
-  recentTitle: {flex: 1},
   historyLink: {minHeight: 44, justifyContent: 'center'},
-  link: {color: colors.green, fontSize: 12},
+  link: {color: colors.green, fontSize: 13, fontWeight: '700'},
   session: {minHeight: 44, flexDirection: 'row', gap: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10},
   sessionDate: {color: colors.ink, fontSize: 12, width: 51},
   sessionDescription: {flex: 1},

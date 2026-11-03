@@ -12,7 +12,6 @@ export interface WorkoutDetailView {
   durationLabel: string;
   volumeLabel: string;
   summaryLabel: string;
-  completedSetsLabel: string;
   unit: 'kg' | 'lb';
   comparison: {
     title: string;
@@ -27,7 +26,6 @@ export interface WorkoutDetailView {
     name: string;
     volumeLabel: string;
     substitutionLabel?: string;
-    planLabel: string;
     loadLabel: string;
     completedSets: LoggedSet[];
   }>;
@@ -36,10 +34,11 @@ export interface WorkoutDetailView {
 interface Props {
   workout: WorkoutDetailView;
   onBackToHistory: () => void;
+  onViewStrength?: () => void;
 }
 
-/** Shows the saved workout and its original plan. */
-export function WorkoutDetailScreen({workout, onBackToHistory}: Props) {
+/** Shows the saved workout and completed sets. */
+export function WorkoutDetailScreen({workout, onBackToHistory, onViewStrength}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
@@ -49,10 +48,9 @@ export function WorkoutDetailScreen({workout, onBackToHistory}: Props) {
       <View style={styles.heading}>
         <Text style={styles.date}>{workout.dateLabel}</Text>
         <Text accessibilityRole="header" style={styles.title}>{workout.name}</Text>
-        <Text style={styles.subtitle}>Your completed workout · Saved to history</Text>
       </View>
       <View style={styles.hero}>
-        <Text style={styles.savedLabel}>✓ SAVED · COMPLETED</Text>
+        <Text style={styles.savedLabel}>✓ SAVED</Text>
         <View style={styles.metrics}>
           <View style={styles.metric}><Text style={styles.heroValue}>{workout.durationLabel}</Text><Text style={styles.heroCaption}>duration</Text></View>
           <View style={styles.metric}><Text style={styles.heroValue}>{workout.volumeLabel}</Text><Text style={styles.heroCaption}>total training volume</Text></View>
@@ -60,9 +58,8 @@ export function WorkoutDetailScreen({workout, onBackToHistory}: Props) {
         <Text style={styles.heroCaption}>{workout.summaryLabel}</Text>
       </View>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your previous session, compared</Text>
+        <Text style={styles.sectionTitle}>{workout.comparison.title}</Text>
         <View style={styles.comparison}>
-          <Text style={styles.comparisonTitle}>{workout.comparison.title}</Text>
           <View style={styles.metrics}>
             <View style={styles.metric}><Text style={styles.value}>{workout.comparison.volumeLabel}</Text><Text style={styles.caption}>{workout.comparison.volumeDescription}</Text></View>
             <View style={styles.metric}><Text style={styles.value}>{workout.comparison.estimatedMaxLabel}</Text><Text style={styles.caption}>{workout.comparison.estimatedMaxDescription}</Text></View>
@@ -71,10 +68,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory}: Props) {
         </View>
       </View>
       <View style={styles.log}>
-        <Text style={styles.sectionTitle}>What you actually did</Text>
-        <Text style={styles.body}>
-          {workout.completedSetsLabel} The original plan is kept alongside your actual log.
-        </Text>
+        <Text style={styles.sectionTitle}>Actual sets</Text>
         {workout.exercises.map((exercise) => (
           <View key={exercise.id} style={styles.exercise}>
             <View style={styles.exerciseHeading}>
@@ -82,35 +76,24 @@ export function WorkoutDetailScreen({workout, onBackToHistory}: Props) {
               <Text style={styles.exerciseVolume}>{exercise.volumeLabel}</Text>
             </View>
             {!!exercise.substitutionLabel && <Text style={styles.badge}>{exercise.substitutionLabel}</Text>}
-            <View><Text style={styles.caption}>{exercise.planLabel}</Text><Text style={styles.caption}>{exercise.loadLabel}</Text></View>
+            <Text style={styles.caption}>{exercise.loadLabel}</Text>
             <View style={styles.row}>
               <Text style={[styles.columnLabel, styles.number]}>SET</Text>
               <Text style={[styles.columnLabel, styles.weight]}>{workout.unit.toUpperCase()}</Text>
               <Text style={[styles.columnLabel, styles.reps]}>REPS</Text>
-              <Text style={[styles.columnLabel, styles.actual]}>ACTUAL</Text>
             </View>
             {exercise.completedSets.map((set) => (
               <View key={set.id} style={[styles.row, styles.loggedSet]}>
                 <Text style={[styles.setNumber, styles.number]}>{set.number}</Text>
                 <Text style={[styles.setValue, styles.weight]}>{set.weight}</Text>
                 <Text style={[styles.setValue, styles.reps]}>{set.reps}</Text>
-                <Text style={[styles.completed, styles.actual]}>✓ Completed</Text>
               </View>
             ))}
           </View>
         ))}
       </View>
-      <View style={styles.guidance}>
-        <Image source={require('../assets/info.png')} style={styles.infoIcon} />
-        <View style={styles.guidanceCopy}>
-          <Text style={styles.guidanceTitle}>Your log, not a load recommendation</Text>
-          <Text style={styles.body}>
-            Volume is weight × reps across completed sets. Estimated 1RM uses
-            Epley; it helps compare performance, not choose a weight to try.
-          </Text>
-        </View>
-      </View>
-      <Button label="Back to all history" variant="secondary" onPress={onBackToHistory} />
+      {!!onViewStrength && <Button label="View strength progress" onPress={onViewStrength} />}
+      <Button label="Back to history" variant="secondary" onPress={onBackToHistory} />
     </ScrollView>
   );
 }
@@ -124,7 +107,6 @@ const styles = StyleSheet.create({
   heading: {gap: 8},
   date: {color: colors.green, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase'},
   title: {color: colors.ink, fontSize: 32, fontWeight: '700', lineHeight: 36, letterSpacing: -1.2},
-  subtitle: {color: colors.muted, fontSize: 14, lineHeight: 21},
   hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 18, gap: 12},
   savedLabel: {color: colors.lime, fontSize: 11, fontWeight: '700'},
   metrics: {flexDirection: 'row', gap: 18},
@@ -134,11 +116,9 @@ const styles = StyleSheet.create({
   section: {gap: 12},
   sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700', letterSpacing: -0.4},
   comparison: {backgroundColor: colors.pale, borderRadius: 22, padding: 18, gap: 12},
-  comparisonTitle: {color: colors.ink, fontSize: 13, fontWeight: '700'},
   value: {color: colors.ink, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
   caption: {color: colors.muted, fontSize: 11, lineHeight: 16},
   bestSet: {color: colors.green, fontSize: 12, lineHeight: 18},
-  body: {color: colors.muted, fontSize: 12, lineHeight: 18},
   log: {gap: 14},
   exercise: {backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 10},
   exerciseHeading: {flexDirection: 'row', alignItems: 'flex-start', gap: 10},
@@ -148,15 +128,9 @@ const styles = StyleSheet.create({
   row: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 6},
   columnLabel: {color: colors.muted, fontSize: 10},
   number: {width: 24},
-  weight: {flex: 1},
-  reps: {flex: 0.85},
-  actual: {flex: 1.6},
+  weight: {width: 75},
+  reps: {width: 65},
   loggedSet: {minHeight: 32, backgroundColor: colors.pale, borderRadius: 8, paddingVertical: 6},
   setNumber: {color: colors.ink, fontSize: 12},
   setValue: {color: colors.ink, fontSize: 14},
-  completed: {color: colors.green, fontSize: 11, fontWeight: '600'},
-  guidance: {backgroundColor: colors.pale, borderRadius: 18, padding: 16, flexDirection: 'row', gap: 12},
-  infoIcon: {width: 20, height: 20},
-  guidanceCopy: {flex: 1, gap: 5},
-  guidanceTitle: {color: colors.ink, fontSize: 14, fontWeight: '700'},
 });

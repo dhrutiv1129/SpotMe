@@ -1,3 +1,9 @@
+> Beta integration update: the default Spring tests now use an isolated H2 database.
+> `BetaApiTests` exercise real HTTP authentication, persistence, progress, alternatives,
+> ownership, idempotency, and validation. Live PostgreSQL tests require explicit opt-in.
+> See [the current beta runbook](../deployment/BETA.md) for the complete commands.
+> Earlier sections below describe the domain-only milestone and may predate integration.
+
 # Backend testing
 
 ## What exists today

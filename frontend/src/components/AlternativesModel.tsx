@@ -16,7 +16,7 @@ interface Props {
   originalExerciseName: string;
   targetLabel: string;
   availableEquipment: string[];
-  alternatives: readonly [ExerciseAlternative, ExerciseAlternative, ExerciseAlternative];
+  alternatives: readonly ExerciseAlternative[];
   onViewGuide: (exerciseId: string) => void;
   onBack: () => void;
 }
@@ -47,6 +47,7 @@ export function AlternativesModel({
           {availableEquipment.map((item) => <Text key={item} style={styles.badge}>✓ {item}</Text>)}
         </View>
       </View>
+      {alternatives.length === 0 && <Text style={styles.target}>No alternatives match this equipment. Try changing what is available.</Text>}
       {alternatives.map((exercise) => (
         <Pressable
           key={exercise.id}

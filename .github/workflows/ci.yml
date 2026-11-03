@@ -31,8 +31,6 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Build and verify backend
-        env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: ./mvnw --batch-mode clean verify
 
       - name: Upload test results
@@ -50,3 +48,35 @@ jobs:
           name: backend-jacoco-coverage
           path: backend/target/site/jacoco/
           if-no-files-found: warn
+
+  frontend:
+    name: Frontend and beta browser flow
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run export:web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: beta-browser-results
+          path: frontend/test-results/

@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 68 disabled JUnit cases in eight `*PendingTests`
+The table below is backed by 53 disabled JUnit cases in six `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -83,11 +83,11 @@ the real production API, mock actual dependencies, resolve any documented policy
 questions, then remove its class-level `@Disabled`. Removing only `@Disabled`
 will fail the build, so unfinished cases cannot accidentally appear green. Remove
 the `pending` tag when the class is complete. For example, run
-`./mvnw -Dtest=EstimatedOneRepMaxPendingTests test` while developing it.
+`./mvnw -Dtest=PersonalRecordsPendingTests test` while developing it.
 
-Pending cases by area: workouts 6, 1RM 8, volume 7, records 8, recommendations
+Pending cases by area: workouts 6, records 8, recommendations
 11, consistency 14, authentication/authorization 11, validation/errors 3.
-The two smoke tests, 24 validation cases, and 28 creation-service cases are enabled. Frontend and optional video tests
+Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
 `recommendation`, `common`) must be reconciled with the eventual production
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 68 intentionally
+Compilation errors and enabled test failures fail the job. The 53 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -210,7 +210,7 @@ Integration boundaries (no production implementations are present yet):
   clock in the agreed date zone, and inject all dependencies into the service.
   No Spring bean registration or package-scan changes are made before adapters exist.
 
-Run `./mvnw -Dtest=WorkoutServiceTests test` from `backend/`. Creation-service tests (28 executed cases, including 20 parameterized invalid inputs)
+Run `./mvnw -Dtest=WorkoutServiceTests test` from `backend/`. Creation-service tests (9 focused cases)
 cover owner assignment, returned data/order, invalid and unknown inputs,
 unauthenticated access, invalid identity/store IDs, storage failures, and snapshots
 of mutable input with immutable responses. These use a real validator and mocked
@@ -226,8 +226,8 @@ in-memory store or demo identity is shipped as production behavior.
 Removed seven creation/validation placeholders from `WorkoutManagementPendingTests`
 and two input-validation placeholders from `ValidationAndErrorsPendingTests`.
 Their behavior is exercised by `WorkoutValidatorTests` and `WorkoutServiceTests`.
-All 20 invalid-input cases also run through the creation service and verify that
-storage is never called. Remaining placeholders cover unimplemented update/delete,
+Validator rules run directly in `WorkoutValidatorTests`; representative invalid,
+null-nested, and unknown-exercise requests verify no storage calls in service tests. Remaining placeholders cover unimplemented update/delete,
 history, cross-user access, resource errors, HTTP mapping, and other feature modules.
 Historical baseline counts above describe earlier runs, not the current suite.
 
@@ -247,9 +247,49 @@ exercise IDs produce empty set history when no stored sets match. No exercise
 catalog lookup is needed to read saved history. Calculators decide frequency and
 streak rules; this layer does not calculate them.
 
-Ten `WorkoutHistoryTests` cover ordering, stored values, empty results, filtering,
+Nine `WorkoutHistoryTests` cover ordering, stored values, empty results, filtering,
 immutable lists, distinct dates, invalid inputs, authentication, owner mismatch,
 and database failures. The completed-history placeholder has been removed.
-Current totals: 64 passing cases and 68 pending contracts. Database adapters,
+The PR 3 baseline originally had 64 passing cases and 68 pending contracts. Database adapters,
 SQL-level ownership tests, pagination, HTTP endpoints, and detail-by-ID retrieval
 are not implemented. This is not yet operational history in the app.
+
+## Strength calculators (PR 4)
+
+`OneRepMaxCalculator.calculate(weight, reps)` returns an optional decimal value.
+For reps > 1 it uses Epley: weight * (30 + reps) / 30, rounded once to six
+places with HALF_UP. One rep returns the actual input weight without rounding.
+Zero external weight returns Optional.empty: body mass is not recorded, so a
+meaningful total-load 1RM cannot be estimated. Missing/negative weights and
+nonpositive reps are rejected. These policies are the initial prototype defaults.
+
+`VolumeCalculator` sums weight * reps for each supplied set exactly once. It
+provides totals and immutable groupings by exercise, workout, or Monday-start
+week (keyed by the Monday date, including cross-year weeks). Input weights must
+use the same unit; output is that unit multiplied by repetitions. Bodyweight
+sets with zero external load contribute zero; added resistance contributes its
+recorded weight only. Empty history returns zero/empty maps. Null history/sets,
+invalid reps/weights, and missing dates for weekly aggregation are rejected.
+Callers supply the intended history window and must avoid duplicate set rows.
+
+The former eight 1RM and seven volume pending contracts are replaced by enabled
+`OneRepMaxCalculatorTests` and `VolumeCalculatorTests` (16 executed cases).
+Coverage includes manual calculation examples, fractional precision, single rep,
+bodyweight, invalid values, large-rep arithmetic, multi-session/exercise grouping,
+and Sunday/Monday year boundaries. Current suite: 60 passed, 53 pending skipped.
+Run `./mvnw -Dtest=OneRepMaxCalculatorTests,VolumeCalculatorTests test`.
+
+Calculators are plain Java and do not query the database. Personal records,
+analytics service/controller orchestration, and frontend integration remain for
+later PRs; no operational analytics endpoint is introduced here.
+
+## Test scope cleanup
+
+Reduced the enabled suite from 84 to 60 cases without changing production code:
+replaced 20 duplicate validator scenarios at the service layer with one no-save
+check (retaining null-nested and unknown-exercise service tests), merged redundant
+history immutability/detail coverage into the ordering test, and removed four
+calculator examples already covered by equivalent formula/validation branches.
+The direct validator matrix remains intact. Security checks, collection snapshots,
+precision/rounding, empty/bodyweight behavior, and week boundaries remain tested.
+Parameterized rows count as separate executed cases, not separate test methods.

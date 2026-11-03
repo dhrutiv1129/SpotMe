@@ -30,7 +30,9 @@ class WorkoutHistoryTests {
     var newer = workout(2, "2026-11-02");
     var sameDay = workout(3, "2026-11-02");
     history(older, newer, sameDay);
-    assertThat(service.getWorkoutHistory()).containsExactly(sameDay, newer, older);
+    var result = service.getWorkoutHistory();
+    assertThat(result).containsExactly(sameDay, newer, older);
+    assertThatThrownBy(result::clear).isInstanceOf(UnsupportedOperationException.class);
     verify(reader).findByUserId(7L);
     verifyNoInteractions(store, catalog);
   }
@@ -41,15 +43,6 @@ class WorkoutHistoryTests {
     assertThat(service.getWorkoutHistory()).isEmpty();
     assertThat(service.getSetHistory(99)).isEmpty();
     assertThat(service.getWorkoutDates()).isEmpty();
-  }
-
-  @Test
-  void preservesExerciseAndSetDetailsAndReturnsImmutableHistory() {
-    var workout = workout(1, "2026-11-01");
-    history(workout);
-    var result = service.getWorkoutHistory();
-    assertThat(result.getFirst()).isEqualTo(workout);
-    assertThatThrownBy(result::clear).isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test

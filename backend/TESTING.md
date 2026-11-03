@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 78 disabled JUnit cases in eight `*PendingTests`
+The table below is backed by 69 disabled JUnit cases in eight `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -85,9 +85,9 @@ will fail the build, so unfinished cases cannot accidentally appear green. Remov
 the `pending` tag when the class is complete. For example, run
 `./mvnw -Dtest=EstimatedOneRepMaxPendingTests test` while developing it.
 
-Pending cases by area: workouts 14, 1RM 8, volume 7, records 8, recommendations
-11, consistency 14, authentication/authorization 11, validation/errors 5.
-The two existing smoke tests remain enabled. Frontend and optional video tests
+Pending cases by area: workouts 7, 1RM 8, volume 7, records 8, recommendations
+11, consistency 14, authentication/authorization 11, validation/errors 3.
+The two smoke tests, 24 validation cases, and 28 creation-service cases are enabled. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
 `recommendation`, `common`) must be reconciled with the eventual production
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 78 intentionally
+Compilation errors and enabled test failures fail the job. The 69 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -184,5 +184,49 @@ to the injected clock. Zero weight is accepted only for catalog-defined bodyweig
 exercises; positive added resistance is allowed for them. Today and past dates
 are accepted. Errors are collected into `WorkoutValidationException.violations()`
 with indexed field paths, stable codes, and readable messages. There is no HTTP
-error mapping or persistence in this PR. Existing pending feature contracts remain
-disabled until their service/controller APIs exist.
+error mapping or persistence in this PR. Covered validation/creation placeholders have been removed; remaining contracts
+stay disabled until their service/controller APIs exist.
+
+## Workout creation service (PR 2)
+
+`WorkoutServiceImpl.createWorkout` obtains identity from `CurrentUser`, snapshots
+input collections, validates through the real `WorkoutValidator`, calls
+`WorkoutStore.save` once, and returns an immutable `WorkoutResponse` with the
+assigned workout ID and ordered exercise/set values. It propagates authentication,
+catalog, and storage failures rather than returning success. The request contains
+no owner ID. Null nested input still produces the validator's field-specific errors.
+
+Integration boundaries (no production implementations are present yet):
+
+- Authentication supplies `CurrentUser.requireUserId()`, rejecting unauthenticated
+  calls and returning the authenticated user's positive database ID. The interface
+  currently lives in `workout` as a consumer contract; coordinate its eventual home
+  with the authentication teammate rather than introducing a second identity source.
+- The database teammate implements `WorkoutStore.save(userId, request)`, maps the
+  request to entities, preserves exercise/set order, and saves the whole aggregate
+  in one transaction, returning the generated positive workout ID. The adapter must
+  roll back all rows on failure. It also implements the existing `ExerciseCatalog`.
+- Application configuration will construct the validator with the catalog and a
+  clock in the agreed date zone, and inject all dependencies into the service.
+  No Spring bean registration or package-scan changes are made before adapters exist.
+
+Run `./mvnw -Dtest=WorkoutServiceTests test` from `backend/`. Creation-service tests (28 executed cases, including 20 parameterized invalid inputs)
+cover owner assignment, returned data/order, invalid and unknown inputs,
+unauthenticated access, invalid identity/store IDs, storage failures, and snapshots
+of mutable input with immutable responses. These use a real validator and mocked
+integration boundaries; they do not prove database persistence or rollback.
+
+This is a business-logic increment, not an operational save endpoint. Entity mapping,
+transactional database integration and rollback tests, authentication wiring, and
+controllers remain necessary before UC1 can save a workout end to end. No fallback
+in-memory store or demo identity is shipped as production behavior.
+
+## Reconciled pending contracts
+
+Removed seven creation/validation placeholders from `WorkoutManagementPendingTests`
+and two input-validation placeholders from `ValidationAndErrorsPendingTests`.
+Their behavior is exercised by `WorkoutValidatorTests` and `WorkoutServiceTests`.
+All 20 invalid-input cases also run through the creation service and verify that
+storage is never called. Remaining placeholders cover unimplemented update/delete,
+history, cross-user access, resource errors, HTTP mapping, and other feature modules.
+Historical baseline counts above describe earlier runs, not the current suite.

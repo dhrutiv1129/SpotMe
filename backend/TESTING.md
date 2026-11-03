@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 24 disabled JUnit cases in five `*PendingTests`
+The table below is backed by 22 disabled JUnit cases in four `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -83,10 +83,9 @@ the real production API, mock actual dependencies, resolve any documented policy
 questions, then remove its class-level `@Disabled`. Removing only `@Disabled`
 will fail the build, so unfinished cases cannot accidentally appear green. Remove
 the `pending` tag when the class is complete. For example, run
-`./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
+`./mvnw -Dtest=WorkoutManagementPendingTests test` while developing it.
 
-Pending cases by area: workouts 6, recommendations
-2, consistency 2, authentication/authorization 11, validation/errors 3.
+Pending cases by area: workouts 6, consistency 2, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
@@ -129,7 +128,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 24 intentionally
+Compilation errors and enabled test failures fail the job. The 22 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -408,3 +407,22 @@ invalid exercise lookup in the future service. Run
 Current suite: 95 passing cases, 24 pending contracts. Earlier counts in this
 file describe prior PR baselines. Catalog loading, recommendation endpoints,
 and frontend selection remain for integration work.
+
+## Recommendation service (PR 10)
+
+`RecommendationServiceImpl.getAlternatives` validates an exercise ID, loads the
+original exercise and curated candidate edges through `RecommendationCatalog`,
+deduplicates candidate IDs by highest relevance, filters by shared muscles,
+available equipment and optional beginner-only mode, then ranks and returns at
+most three display-ready `AlternativeDTO` values. Each DTO includes the exercise
+ID, name, tags, difficulty, instructions and relevance. A positive unknown ID
+raises `ExerciseNotFoundException`; catalog failures propagate. The catalog
+adapter must supply trusted normalized tags and relationship relevance.
+
+Six `RecommendationServiceTests` cover loaded metadata, filtering/ranking,
+beginner mode, duplicate edges, empty results, invalid/missing exercise IDs and
+catalog failures. The last two pending recommendation contracts were replaced;
+run `./mvnw -Dtest=RecommendationServiceTests test` from `backend/`.
+Current suite: 101 passing cases and 22 pending contracts. Earlier counts above
+are prior PR baselines. A production catalog adapter, endpoint, and frontend
+selection remain integration work.

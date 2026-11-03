@@ -5,6 +5,7 @@ import type {StrengthPoint} from '../components/StrengthChart';
 import {colors} from '../theme';
 
 export interface StrengthProgressView {
+  exerciseId: string;
   exerciseName: string;
   periodLabel: string;
   estimatedMaxLabel: string;

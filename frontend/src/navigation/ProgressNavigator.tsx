@@ -1,6 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import {CalendarDaySheet} from '../components/CalendarDaySheet';
+import {StrengthExerciseSelector} from '../components/StrengthExerciseSelector';
+import type {StrengthExerciseOption} from '../components/StrengthExerciseSelector';
 import {ConsistencyScreen} from '../screens/ConsistencyScreen';
 import type {ConsistencyView} from '../screens/ConsistencyScreen';
 import {ProgressScreen} from '../screens/ProgressScreen';
@@ -18,7 +20,8 @@ interface Props {
   consistency: ConsistencyView;
   history: WorkoutHistoryView;
   loadWorkout: (sessionId: string) => Promise<WorkoutDetailView>;
-  onChooseExercise: () => void;
+  searchExercises: (query: string, signal: AbortSignal) => Promise<readonly StrengthExerciseOption[]>;
+  loadStrength: (exerciseId: string) => Promise<StrengthProgressView>;
   onEditGoal: () => void;
   goalEditor?: {
     goal: WeeklyGoalView;
@@ -32,9 +35,11 @@ interface Props {
 /** Handles navigation between the Progress screens. */
 export function ProgressNavigator({
   strength, consistency, history, loadWorkout,
-  onChooseExercise, onEditGoal, goalEditor, onChangeMonth, onViewDay, onLoadMoreHistory,
+  searchExercises, loadStrength, onEditGoal, goalEditor, onChangeMonth, onViewDay, onLoadMoreHistory,
 }: Props) {
   const [tab, setTab] = useState<'strength' | 'consistency'>('strength');
+  const [selectedStrength, setSelectedStrength] = useState(strength);
+  const [choosingExercise, setChoosingExercise] = useState(false);
   const [view, setView] = useState<'summary' | 'history' | 'goal'>('summary');
   const [workout, setWorkout] = useState<WorkoutDetailView | null>(null);
   const [dayWorkout, setDayWorkout] = useState<WorkoutDetailView | null>(null);
@@ -45,6 +50,7 @@ export function ProgressNavigator({
   const requestVersion = useRef(0);
 
   useEffect(() => () => {requestVersion.current += 1;}, []);
+  useEffect(() => {setSelectedStrength(strength);}, [strength]);
 
   function navigate(nextView: 'summary' | 'history' | 'goal') {
     requestVersion.current += 1;
@@ -53,6 +59,7 @@ export function ProgressNavigator({
     setWorkout(null);
     setDayWorkout(null);
     setSelectedDate(null);
+    setChoosingExercise(false);
     setView(nextView);
   }
 
@@ -82,6 +89,16 @@ export function ProgressNavigator({
   function switchTab(nextTab: 'strength' | 'consistency') {
     navigate('summary');
     setTab(nextTab);
+  }
+
+  async function selectExercise(exerciseId: string) {
+    const version = ++requestVersion.current;
+    const response = await loadStrength(exerciseId);
+    if (version !== requestVersion.current) return;
+    if (response.exerciseId !== exerciseId) {
+      throw new Error('Strength results for this exercise could not be loaded.');
+    }
+    setSelectedStrength(response);
   }
 
   function viewDay(date: string, sessionIds: readonly string[]) {
@@ -119,10 +136,10 @@ export function ProgressNavigator({
           />
         ) : tab === 'strength' ? (
           <ProgressScreen
-            progress={strength}
+            progress={selectedStrength}
             onViewHistory={() => navigate('history')}
             onViewConsistency={() => switchTab('consistency')}
-            onChooseExercise={onChooseExercise}
+            onChooseExercise={() => setChoosingExercise(true)}
             onViewSession={(id) => {void openWorkout(id);}}
           />
         ) : (
@@ -143,6 +160,14 @@ export function ProgressNavigator({
           />
         )}
       </View>
+      {choosingExercise && (
+        <StrengthExerciseSelector
+          selectedExerciseId={selectedStrength.exerciseId}
+          searchExercises={searchExercises}
+          onSelect={selectExercise}
+          onClose={() => setChoosingExercise(false)}
+        />
+      )}
       {dayWorkout && (
         <CalendarDaySheet
           workout={dayWorkout}

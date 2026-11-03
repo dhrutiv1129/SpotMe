@@ -52,9 +52,9 @@ From `backend/`:
 ./mvnw --batch-mode -Dtest=BackendApplicationTests test
 ```
 
-There are 60 enabled tests (2 Spring context smoke tests, 24 validation cases,
-9 creation-service cases, 9 history cases, and 16 strength-calculation cases)
-and 53 deliberately disabled feature test contracts. Skipped contracts do not verify working features.
+There are 67 enabled tests (2 Spring context smoke tests, 24 validation cases,
+9 creation-service cases, 9 history cases, 16 strength-calculation cases, and 7 personal-record cases)
+and 45 deliberately disabled feature test contracts. Skipped contracts do not verify working features.
 Tests need no database, credentials, or running server. Surefire results are in
 `backend/target/surefire-reports/`; after `verify`, open
 `backend/target/site/jacoco/index.html` for coverage. See

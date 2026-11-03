@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 53 disabled JUnit cases in six `*PendingTests`
+The table below is backed by 45 disabled JUnit cases in five `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -83,9 +83,9 @@ the real production API, mock actual dependencies, resolve any documented policy
 questions, then remove its class-level `@Disabled`. Removing only `@Disabled`
 will fail the build, so unfinished cases cannot accidentally appear green. Remove
 the `pending` tag when the class is complete. For example, run
-`./mvnw -Dtest=PersonalRecordsPendingTests test` while developing it.
+`./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
 
-Pending cases by area: workouts 6, records 8, recommendations
+Pending cases by area: workouts 6, recommendations
 11, consistency 14, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
@@ -129,7 +129,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 53 intentionally
+Compilation errors and enabled test failures fail the job. The 45 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -293,3 +293,28 @@ calculator examples already covered by equivalent formula/validation branches.
 The direct validator matrix remains intact. Security checks, collection snapshots,
 precision/rounding, empty/bodyweight behavior, and week boundaries remain tested.
 Parameterized rows count as separate executed cases, not separate test methods.
+
+## Personal records (PR 5)
+
+`PersonalRecordFinder.findRecords` accepts one user's set history and returns an
+immutable list of `PersonalRecordDTO` values ordered by exercise ID. Each exercise
+has maximum external weight, optional estimated 1RM, and maximum per-workout
+external-load volume. Each achievement contains its own date and workout ID.
+The finder reuses the strength calculators and does not persist derived records.
+
+Volume includes all sets of that exercise within a workout, even repeated exercise
+rows; separate workouts on the same date remain separate volume candidates.
+Ties retain the earliest achievement date, then the smallest workout ID. The
+1RM comparison uses the calculator's six-decimal estimates. Zero-external-load
+history has zero weight/volume records and no 1RM; added resistance uses the
+recorded external weight. Empty history returns an empty list. Malformed values
+or inconsistent dates for one workout are rejected. Input must use a consistent
+weight unit and contain each stored set once.
+
+Seven `PersonalRecordFinderTests` replace the eight pending PR contracts. They
+cover first records, stronger/weaker sessions, independent achievement dates,
+ties and unordered input, exercise/workout separation, empty/bodyweight history,
+and invalid data. Run `./mvnw -Dtest=PersonalRecordFinderTests test` from `backend/`.
+Current suite: 67 passing cases, 45 pending contracts. Counts in earlier PR sections
+are historical. Analytics orchestration, authenticated history loading, HTTP
+endpoints, and frontend display remain integration work.

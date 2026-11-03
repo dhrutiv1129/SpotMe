@@ -72,7 +72,7 @@ out of source control and keep `./mvnw test` independent of PostgreSQL.
 
 ## Deferred feature tests
 
-The table below is backed by 45 disabled JUnit cases in five `*PendingTests`
+The table below is backed by 22 disabled JUnit cases in four `*PendingTests`
 classes under `src/test/java/com/spotme/{feature}/`. These are pending test
 contracts, not implemented behavior checks: each body describes the setup,
 operation and expected result in a deliberate `fail(...)` call. Maven reports
@@ -83,10 +83,9 @@ the real production API, mock actual dependencies, resolve any documented policy
 questions, then remove its class-level `@Disabled`. Removing only `@Disabled`
 will fail the build, so unfinished cases cannot accidentally appear green. Remove
 the `pending` tag when the class is complete. For example, run
-`./mvnw -Dtest=ExerciseAlternativesPendingTests test` while developing it.
+`./mvnw -Dtest=WorkoutManagementPendingTests test` while developing it.
 
-Pending cases by area: workouts 6, recommendations
-11, consistency 14, authentication/authorization 11, validation/errors 3.
+Pending cases by area: workouts 6, consistency 2, authentication/authorization 11, validation/errors 3.
 Enabled tests cover smoke checks, validation, creation, history, and strength calculations. Frontend and optional video tests
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
@@ -129,7 +128,7 @@ landmarks and joint angles. Do not install OpenCV or MediaPipe for this plan.
 dependency caching keyed by `backend/pom.xml`, then runs
 `./mvnw --batch-mode clean verify` from `backend/`.
 
-Compilation errors and enabled test failures fail the job. The 45 intentionally
+Compilation errors and enabled test failures fail the job. The 22 intentionally
 disabled test contracts remain skipped. No frontend or Python jobs are configured.
 
 The workflow uploads `backend-test-results` (Surefire reports) and
@@ -318,3 +317,112 @@ and invalid data. Run `./mvnw -Dtest=PersonalRecordFinderTests test` from `backe
 Current suite: 67 passing cases, 45 pending contracts. Counts in earlier PR sections
 are historical. Analytics orchestration, authenticated history loading, HTTP
 endpoints, and frontend display remain integration work.
+
+## Strength analytics service (PR 6)
+
+`StrengthAnalyticsServiceImpl` reads the authenticated user's sets through
+`WorkoutService`. `getExerciseProgress(exerciseId)` groups sets by workout,
+returns one point per workout sorted by date and ID, and includes external-load
+volume, that workout's maximum estimated 1RM, and the change from the preceding
+workout. The first point has no change. If either adjacent workout has only
+zero-external-load sets, the change is absent. Personal records for that exercise
+are returned alongside the points. Empty history returns empty points and records.
+
+`getPersonalRecords()` reads all sets through the newly added
+`WorkoutService.getAllSetHistory()` and passes them to `PersonalRecordFinder`.
+The workout service derives ownership from `CurrentUser` and rejects a reader
+returning another user's workout. Callers cannot supply a user ID to analytics.
+The database history adapter remains required to make this operational.
+
+Six `StrengthAnalyticsServiceTests` cover chronological points, per-session
+volume and 1RM changes, same-day ordering, bodyweight and empty history, records
+across exercises, invalid IDs, and upstream failures. The workout history test
+also checks the all-set read path. Run
+`./mvnw -Dtest=StrengthAnalyticsServiceTests,WorkoutHistoryTests test`.
+Current suite: 73 passing cases, 45 pending contracts. Earlier PR counts in this
+file are historical. HTTP endpoints and frontend integration remain follow-up
+work.
+
+## Consistency calculators (PR 7)
+
+`StreakCalculator` counts consecutive active local calendar dates. Multiple
+workouts on a date count as one active day. A current streak is anchored by a
+workout today or yesterday in the injected clock's zone; if the latest date is
+older, current streak is zero. The longest streak is historical. Missing or
+future completed dates are rejected. The caller must supply already resolved
+local workout dates; instant-to-user-zone conversion belongs at the ingestion
+boundary and remains pending.
+
+`FrequencyCalculator` counts workout sessions, so two workouts on one date
+contribute two to frequency. Weekly buckets start on Monday and are keyed by
+that Monday date; monthly buckets use `YearMonth`. Both return sorted immutable
+maps. Empty history yields empty maps. These calculators use only dates and do
+not read the database or construct calendar/heatmap output.
+
+Eight `ConsistencyCalculatorTests` replace nine covered placeholders, checking
+current/longest streaks, duplicates, gaps, leap day, local date anchoring,
+Monday/year and month boundaries, empty history, and malformed input. Five
+pending consistency contracts remain for ingestion timezone conversion and
+calendar/heatmap integration. Run `./mvnw -Dtest=ConsistencyCalculatorTests test`.
+Current suite: 81 passing cases and 36 pending contracts. Earlier counts in this
+file describe prior PR baselines.
+
+## Consistency service and calendar (PR 8)
+
+`ConsistencyServiceImpl` reads owner-scoped workouts through
+`WorkoutService.getWorkoutHistory()`. Its summary counts all sessions by week
+and month and calculates current/longest daily streaks using an injected clock.
+A month calendar returns every date in order, including inactive days, with
+session count, sorted workout IDs for navigation, and heatmap intensity capped
+at five. Two sessions on one date contribute two to frequency/intensity but one
+active day to streaks. Results are immutable. Duplicate workout IDs, invalid
+or future completed dates, and null history are rejected.
+
+Seven `ConsistencyServiceTests` cover summary and calendar data, multiple
+sessions, leap day, inactive dates, capped intensity, empty history,
+authentication failures and malformed data. Three covered placeholders were
+removed; two remain for completion-date ingestion and timezone conversion.
+Run `./mvnw -Dtest=ConsistencyServiceTests test` from `backend/`.
+Current suite: 88 passing cases, 33 pending contracts. Earlier PR counts above
+are historical. Database and authentication adapters, API endpoints, and the
+frontend calendar/heatmap still need integration.
+
+## Exercise recommendation rules (PR 9)
+
+`AlternativeFilter` accepts trusted catalog options, candidate relationship
+relevance, available equipment tags, and a beginner-only flag. It excludes the
+original exercise, requires at least one shared target-muscle tag, requires every
+piece of a candidate's equipment to be available, and optionally restricts
+results to BEGINNER difficulty. Equipment-free exercises require no tags. Tags
+are exact catalog-defined strings; catalog ingestion must normalize them.
+
+`DifficultyRanker` returns at most three candidates, sorted by difficulty
+(BEGINNER, INTERMEDIATE, ADVANCED), descending relevance (0–100), then exercise
+ID for stable ties. It returns fewer when fewer qualify and never fabricates
+options. Seven `RecommendationRulesTests` cover matching, equipment sets,
+beginner suitability, ranking and ties, fewer/none, and malformed metadata.
+Nine corresponding pending contracts were removed; two remain for missing or
+invalid exercise lookup in the future service. Run
+`./mvnw -Dtest=RecommendationRulesTests test` from `backend/`.
+Current suite: 95 passing cases, 24 pending contracts. Earlier counts in this
+file describe prior PR baselines. Catalog loading, recommendation endpoints,
+and frontend selection remain for integration work.
+
+## Recommendation service (PR 10)
+
+`RecommendationServiceImpl.getAlternatives` validates an exercise ID, loads the
+original exercise and curated candidate edges through `RecommendationCatalog`,
+deduplicates candidate IDs by highest relevance, filters by shared muscles,
+available equipment and optional beginner-only mode, then ranks and returns at
+most three display-ready `AlternativeDTO` values. Each DTO includes the exercise
+ID, name, tags, difficulty, instructions and relevance. A positive unknown ID
+raises `ExerciseNotFoundException`; catalog failures propagate. The catalog
+adapter must supply trusted normalized tags and relationship relevance.
+
+Six `RecommendationServiceTests` cover loaded metadata, filtering/ranking,
+beginner mode, duplicate edges, empty results, invalid/missing exercise IDs and
+catalog failures. The last two pending recommendation contracts were replaced;
+run `./mvnw -Dtest=RecommendationServiceTests test` from `backend/`.
+Current suite: 101 passing cases and 22 pending contracts. Earlier counts above
+are prior PR baselines. A production catalog adapter, endpoint, and frontend
+selection remain integration work.

@@ -13,6 +13,9 @@ public interface WorkoutService {
   /** Current user's sets for an exercise, in history/exercise/set order. */
   List<SetHistoryEntry> getSetHistory(long exerciseId);
 
+  /** All current user's sets for cross-exercise analytics. */
+  List<SetHistoryEntry> getAllSetHistory();
+
   /** Sorted distinct completed dates for consistency calculations. */
   List<LocalDate> getWorkoutDates();
 }

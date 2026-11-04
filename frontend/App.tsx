@@ -804,10 +804,8 @@ export default function App() {
           exerciseId: String(guide.id),
           name: guide.name,
           originalExerciseName: exercise?.name || "",
-          muscleEquipmentLabel: guide.muscleGroup,
           targetLabel: "Use a comfortable load and range of motion.",
-          equipmentLabel: guide.requiredEquipment.join(", "),
-          loadInstructions: "All logged weight is external load in lb.",
+          loadLabel: "All logged weight is external load in lb.",
           cues: [{ id: "instructions", text: guide.instructions }],
         }}
         onBack={() => navigate("alternatives")}

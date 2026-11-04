@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "./mvnw --batch-mode spring-boot:run -Dspring-boot.run.arguments=--server.port=18080",
+        `${process.platform === "win32" ? "mvnw.cmd" : "./mvnw"} --batch-mode spring-boot:run -Dspring-boot.run.arguments=--server.port=18080`,
       cwd: "../backend",
       url: "http://localhost:18080/api/exercises",
       timeout: 180000,

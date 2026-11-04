@@ -13,6 +13,7 @@ interface Props {
   onSave: (sessionId: string) => Promise<SavedWorkoutReceipt>;
   loadWorkout: (sessionId: string) => Promise<WorkoutDetailView>;
   onKeepTraining: () => void;
+  onReturnToTrain: () => void;
   onViewHistory: () => void;
   onViewStrength: () => void;
 }
@@ -22,7 +23,7 @@ export function WorkoutCompletionNavigator(props: Props) {
   return <CompletionFlow key={props.workout.sessionId} {...props} />;
 }
 
-function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onViewHistory, onViewStrength}: Props) {
+function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnToTrain, onViewHistory, onViewStrength}: Props) {
   const [receipt, setReceipt] = useState<SavedWorkoutReceipt | null>(null);
   const [detail, setDetail] = useState<WorkoutDetailView | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +80,7 @@ function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onViewHis
         <WorkoutSavedScreen
           receipt={receipt}
           onViewSession={(id) => {void openSavedWorkout(id);}}
-          onViewHistory={() => leave(onViewHistory)}
+          onReturnToTrain={() => leave(onReturnToTrain)}
         />
       ) : (
         <WorkoutReviewScreen

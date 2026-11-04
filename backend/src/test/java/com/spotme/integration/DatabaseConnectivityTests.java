@@ -1,4 +1,4 @@
-package com.spotme.backend;
+package com.spotme.integration;
 
 import java.sql.Connection;
 import java.sql.SQLException;

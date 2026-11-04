@@ -1,10 +1,12 @@
-package com.spotme.backend;
+package com.spotme.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URI;
 import java.net.http.*;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -99,6 +101,53 @@ class BetaApiTests {
     assertThat(call("GET", "/records", other, null, null).body()).isEqualTo("[]");
     assertThat(call("POST", "/auth/logout", token, null, null).statusCode()).isEqualTo(204);
     assertThat(call("GET", "/workouts", token, null, null).statusCode()).isEqualTo(401);
+  }
+
+  @Test
+  void splitControllersKeepAuthenticationAndCorsPolicy() throws Exception {
+    for (String path : List.of(
+        "/auth/me", "/exercises", "/workouts", "/progress/2", "/records",
+        "/exercises/1/alternatives")) {
+      var response = call("GET", path, null, null, null);
+      assertThat(response.statusCode()).as(path).isEqualTo(401);
+      assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
+      assertThat(response.headers().firstValue("X-Content-Type-Options")).contains("nosniff");
+    }
+    var preflight = client.send(
+        HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts"))
+            .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+            .header("Origin", "http://localhost:8081")
+            .header("Access-Control-Request-Method", "POST")
+            .header("Access-Control-Request-Headers", "Authorization,Idempotency-Key,Content-Type")
+            .build(), HttpResponse.BodyHandlers.ofString());
+    assertThat(preflight.statusCode()).isEqualTo(200);
+    assertThat(preflight.headers().firstValue("Access-Control-Allow-Origin"))
+        .contains("http://localhost:8081");
+  }
+
+  @Test
+  void concurrentRetriesCommitOneWorkout() throws Exception {
+    String token = register();
+    String key = UUID.randomUUID().toString();
+    var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts"))
+        .header("Authorization", "Bearer " + token)
+        .header("Idempotency-Key", key)
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(workout(8)))
+        .build();
+    var first = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    var second = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    CompletableFuture.allOf(first, second).get(15, java.util.concurrent.TimeUnit.SECONDS);
+    assertThat(first.get().statusCode()).as(first.get().body()).isEqualTo(201);
+    assertThat(second.get().statusCode()).as(second.get().body()).isEqualTo(201);
+    long id = jdbc.queryForObject(
+        "SELECT id FROM beta_workouts WHERE request_key=?", Long.class, key);
+    // A database read may add decimal trailing zeroes; both responses must identify the same save.
+    assertThat(first.get().body()).contains("\"id\":" + id + ",");
+    assertThat(second.get().body()).contains("\"id\":" + id + ",");
+    assertThat(jdbc.queryForObject(
+        "SELECT COUNT(*) FROM beta_workouts WHERE request_key=?", Integer.class, key))
+        .isEqualTo(1);
   }
 
   @Test

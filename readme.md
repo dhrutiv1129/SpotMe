@@ -7,6 +7,10 @@ The React Native/Expo frontend now connects to the Spring Boot API. PostgreSQL a
 H2 persistence use versioned Flyway migrations. The backend reuses the team's workout,
 analytics, and recommendation services; all workout access uses the authenticated owner.
 
+The backend is organized by feature under `com.spotme`, with `SpotMeApplication`
+as its entry point. See the [backend architecture guide](backend/ARCHITECTURE.md)
+for the package map, request flow, and persistence boundaries.
+
 ## Run locally
 
 Requires JDK 21+ and Node 24. Run each code block below in a separate terminal,

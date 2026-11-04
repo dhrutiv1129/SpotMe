@@ -1,4 +1,4 @@
-package com.spotme.backend.beta;
+package com.spotme.common;
 
 import com.spotme.recommendation.ExerciseNotFoundException;
 import com.spotme.workout.WorkoutValidationException;

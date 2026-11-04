@@ -1,8 +1,6 @@
-package com.spotme.backend.beta;
+package com.spotme.workout;
 
-import com.spotme.recommendation.*;
-import com.spotme.recommendation.RecommendationCatalog.*;
-import com.spotme.workout.*;
+import com.spotme.common.Digests;
 import java.sql.Date;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,73 +9,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public class DatabaseAdapters
-    implements WorkoutStore, WorkoutHistoryReader, ExerciseCatalog, RecommendationCatalog {
-  public record Exercise(
-      long id,
-      String name,
-      String muscleGroup,
-      List<String> requiredEquipment,
-      String difficulty,
-      boolean bodyweight,
-      String instructions) {}
-
+public class JdbcWorkoutRepository implements WorkoutStore, WorkoutHistoryReader {
   private final JdbcTemplate jdbc;
 
-  public DatabaseAdapters(JdbcTemplate jdbc) {
+  public JdbcWorkoutRepository(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
-  }
-
-  public List<Exercise> exercises() {
-    return jdbc.query(
-        "SELECT * FROM beta_exercises ORDER BY id",
-        (rs, row) ->
-            new Exercise(
-                rs.getLong("id"),
-                rs.getString("name"),
-                rs.getString("muscle_group"),
-                List.of(rs.getString("equipment").split(",")),
-                rs.getString("difficulty"),
-                rs.getBoolean("bodyweight"),
-                rs.getString("instructions")));
-  }
-
-  @Override
-  public Optional<ExerciseInfo> findById(long id) {
-    return jdbc
-        .query(
-            "SELECT bodyweight FROM beta_exercises WHERE id=?",
-            (rs, row) -> new ExerciseInfo(rs.getBoolean(1)),
-            id)
-        .stream()
-        .findFirst();
-  }
-
-  @Override
-  public Optional<CatalogExercise> findExercise(long id) {
-    return exercises().stream().filter(e -> e.id() == id).map(this::catalog).findFirst();
-  }
-
-  private CatalogExercise catalog(Exercise e) {
-    return new CatalogExercise(
-        new ExerciseOption(
-            e.id(),
-            Set.of(e.muscleGroup()),
-            Set.copyOf(e.requiredEquipment()),
-            ExerciseOption.Difficulty.valueOf(e.difficulty())),
-        e.name(),
-        e.instructions());
-  }
-
-  @Override
-  public List<CatalogAlternative> findAlternatives(long id) {
-    Map<Long, Exercise> all = new HashMap<>();
-    exercises().forEach(e -> all.put(e.id(), e));
-    return jdbc.query(
-        "SELECT alternative_id,relevance FROM beta_alternatives WHERE original_id=? ORDER BY"
-            + " alternative_id",
-        (rs, row) -> new CatalogAlternative(catalog(all.get(rs.getLong(1))), rs.getInt(2)),
-        id);
   }
 
   /** Calls go through the Spring proxy from the service, making the complete write atomic. */
@@ -86,10 +22,10 @@ public class DatabaseAdapters
   public long save(long userId, WorkoutRequest workout) {
     // The API's idempotency transaction supplies the row; direct domain use gets a fresh key.
     return insert(
-        userId, workout, UUID.randomUUID().toString(), Authentication.digest(workout.toString()));
+        userId, workout, UUID.randomUUID().toString(), Digests.sha256(workout.toString()));
   }
 
-  public long insert(long userId, WorkoutRequest workout, String key, String hash) {
+  private long insert(long userId, WorkoutRequest workout, String key, String hash) {
     var holder = new GeneratedKeyHolder();
     jdbc.update(
         connection -> {
@@ -153,5 +89,25 @@ public class DatabaseAdapters
               userId, new WorkoutResponse(id, rs.getDate(2).toLocalDate(), exercises));
         },
         userId);
+  }
+
+  /** Must run inside the save transaction; serializes requests from the same owner. */
+  public void lockOwner(long owner) {
+    jdbc.queryForObject("SELECT id FROM beta_users WHERE id=? FOR UPDATE", Long.class, owner);
+  }
+
+  public record PriorSave(long workoutId, String requestHash) {}
+
+  public Optional<PriorSave> findSave(long owner, String key) {
+    return jdbc.query(
+        "SELECT id,request_hash FROM beta_workouts WHERE user_id=? AND request_key=?",
+        (rs, row) -> new PriorSave(rs.getLong(1), rs.getString(2)), owner, key)
+        .stream().findFirst();
+  }
+
+  public void recordSave(long owner, long workoutId, String key, String hash) {
+    jdbc.update(
+        "UPDATE beta_workouts SET request_key=?,request_hash=? WHERE id=? AND user_id=?",
+        key, hash, workoutId, owner);
   }
 }

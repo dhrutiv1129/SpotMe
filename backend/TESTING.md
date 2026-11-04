@@ -1,18 +1,23 @@
 > Beta integration update: the default Spring tests now use an isolated H2 database.
 > `BetaApiTests` exercise real HTTP authentication, persistence, progress, alternatives,
 > ownership, idempotency, and validation. Live PostgreSQL tests require explicit opt-in.
+> The application entry point is now `com.spotme.SpotMeApplication`; Spring scans
+> all feature packages under `com.spotme`. HTTP/database tests live under
+> `src/test/java/com/spotme/integration`, and the smoke test is
+> `src/test/java/com/spotme/SpotMeApplicationTests.java`.
+> See [the architecture guide](ARCHITECTURE.md) for the current package layout.
 > See [the current beta runbook](../deployment/BETA.md) for the complete commands.
 > Earlier sections below describe the domain-only milestone and may predate integration.
 
 # Backend testing
 
-## What exists today
+## Historical scaffold milestone
 
 The backend contains the application scaffold and standalone workout validation
 under `com.spotme.workout`. There are no controllers, persistence adapters, or
 frontend yet. The validator is not wired into an HTTP endpoint.
 
-`src/test/java/com/spotme/backend/BackendApplicationTests.java` contains two
+`src/test/java/com/spotme/SpotMeApplicationTests.java` now contains two
 Spring context smoke tests: application configuration registers the entry-point
 bean, and the configured application name is `backend`. The original context
 loading test is retained with an explicit assertion; one configuration test was
@@ -34,7 +39,7 @@ From `backend/`:
 ```sh
 ./mvnw test
 ./mvnw verify
-./mvnw -Dtest=BackendApplicationTests test
+./mvnw -Dtest=SpotMeApplicationTests test
 ```
 
 Surefire results are in `target/surefire-reports/`. Maven may need network access
@@ -96,7 +101,8 @@ Enabled tests cover smoke checks, validation, creation, history, and strength ca
 remain documented below until those components and their test runners exist. Proposed feature
 packages (`com.spotme.auth`, `workout`, `analytics`, `consistency`,
 `recommendation`, `common`) must be reconciled with the eventual production
-package layout; the current application scans `com.spotme.backend` and below.
+package layout. The application now scans `com.spotme` and below; the descriptions
+in this historical section predate the integrated feature layout.
 
 | Missing area | Tests to implement when built |
 | --- | --- |

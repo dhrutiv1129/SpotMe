@@ -1,8 +1,8 @@
-package com.spotme.backend.beta;
+package com.spotme.workout;
 
-import com.spotme.workout.*;
+import com.spotme.auth.CurrentUser;
+import com.spotme.common.Digests;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -10,12 +10,12 @@ import org.springframework.web.server.ResponseStatusException;
 /** Serializes saves per owner so a retried request cannot create a duplicate workout. */
 @Service
 public class SaveWorkout {
-  private final JdbcTemplate jdbc;
+  private final JdbcWorkoutRepository repository;
   private final WorkoutService workouts;
   private final CurrentUser user;
 
-  public SaveWorkout(JdbcTemplate jdbc, WorkoutService workouts, CurrentUser user) {
-    this.jdbc = jdbc;
+  public SaveWorkout(JdbcWorkoutRepository repository, WorkoutService workouts, CurrentUser user) {
+    this.repository = repository;
     this.workouts = workouts;
     this.user = user;
   }
@@ -27,30 +27,21 @@ public class SaveWorkout {
           HttpStatus.BAD_REQUEST, "A valid Idempotency-Key is required.");
     limit(input);
     long owner = user.requireUserId();
-    jdbc.queryForObject("SELECT id FROM beta_users WHERE id=? FOR UPDATE", Long.class, owner);
-    String hash = Authentication.digest(input.toString());
-    var prior =
-        jdbc.queryForList(
-            "SELECT id,request_hash FROM beta_workouts WHERE user_id=? AND request_key=?",
-            owner,
-            key);
-    if (!prior.isEmpty()) {
-      if (!hash.equals(prior.getFirst().get("request_hash")))
+    repository.lockOwner(owner);
+    String hash = Digests.sha256(input.toString());
+    var prior = repository.findSave(owner, key);
+    if (prior.isPresent()) {
+      if (!hash.equals(prior.get().requestHash()))
         throw new ResponseStatusException(
             HttpStatus.CONFLICT, "This save key was already used for different workout data.");
-      long id = ((Number) prior.getFirst().get("id")).longValue();
+      long id = prior.get().workoutId();
       return workouts.getWorkoutHistory().stream()
           .filter(w -> w.id() == id)
           .findFirst()
           .orElseThrow();
     }
     WorkoutResponse result = workouts.createWorkout(input);
-    jdbc.update(
-        "UPDATE beta_workouts SET request_key=?,request_hash=? WHERE id=? AND user_id=?",
-        key,
-        hash,
-        result.id(),
-        owner);
+    repository.recordSave(owner, result.id(), key, hash);
     return result;
   }
 

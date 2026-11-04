@@ -1,5 +1,7 @@
 package com.spotme.workout;
 
+import com.spotme.auth.CurrentUser;
+
 import java.util.Objects;
 import java.time.LocalDate;
 import java.util.ArrayList;

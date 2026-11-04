@@ -1,5 +1,7 @@
 package com.spotme.workout;
 
+import com.spotme.auth.CurrentUser;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -48,6 +50,8 @@ class WorkoutHistoryTests {
   @Test
   void filtersSetsAndPreservesOneBasedOrderAndDecimalWeights() {
     history(workout(1, "2026-11-01"), workout(2, "2026-11-02"));
+    assertThat(service.getAllSetHistory()).hasSize(6)
+        .extracting(SetHistoryEntry::exerciseId).containsExactly(1L, 5L, 5L, 1L, 5L, 5L);
     var sets = service.getSetHistory(5);
     assertThat(sets).containsExactly(
         new SetHistoryEntry(2, LocalDate.parse("2026-11-02"), 5, 2, 1, 8, new BigDecimal("40.25")),

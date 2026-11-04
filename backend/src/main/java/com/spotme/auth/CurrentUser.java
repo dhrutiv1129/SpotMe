@@ -1,4 +1,4 @@
-package com.spotme.workout;
+package com.spotme.auth;
 
 /** Authentication integration boundary; never resolve identity from workout request fields. */
 @FunctionalInterface

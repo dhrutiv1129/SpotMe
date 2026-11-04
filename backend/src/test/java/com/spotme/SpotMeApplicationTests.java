@@ -1,4 +1,4 @@
-package com.spotme.backend;
+package com.spotme;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,14 +8,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
 @SpringBootTest
-class BackendApplicationTests {
+class SpotMeApplicationTests {
 
 	@Autowired
 	private ApplicationContext context;
 
 	@Test
 	void contextLoads() {
-		assertThat(context.getBean(BackendApplication.class)).isNotNull();
+		assertThat(context.getBean(SpotMeApplication.class)).isNotNull();
 	}
 
 	@Test

@@ -1,0 +1,20 @@
+package com.spotme.common;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+
+/** Hashes session tokens and workout retry payloads without coupling their features. */
+public final class Digests {
+  private Digests() {}
+
+  public static String sha256(String value) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException ex) {
+      throw new IllegalStateException(ex);
+    }
+  }
+}

@@ -31,7 +31,7 @@ export function SetRow(props: LoggedProps | DraftProps) {
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Edit set ${props.number}, ${props.weight} kilograms, ${props.reps} reps`}
+        accessibilityLabel={`Edit set ${props.number}, ${props.weight} pounds, ${props.reps} reps`}
         disabled={props.disabled}
         onPress={props.onEdit}
         style={styles.loggedRow}
@@ -50,14 +50,14 @@ export function SetRow(props: LoggedProps | DraftProps) {
     <View style={styles.draftRow}>
       <Text style={styles.number}>{props.number}</Text>
       <NumberField
-        label="WEIGHT (KG)"
+        label="Weight (lb)"
         value={props.weight}
         onChange={props.onWeightChange}
         error={props.weightError}
         disabled={props.disabled}
       />
       <NumberField
-        label="REPS"
+        label="Reps"
         value={props.reps}
         onChange={props.onRepsChange}
         error={props.repsError}

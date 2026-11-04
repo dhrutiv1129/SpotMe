@@ -9,7 +9,10 @@ analytics, and recommendation services; all workout access uses the authenticate
 
 ## Run locally
 
-Requires JDK 21+ and Node 24. Start the backend:
+Requires JDK 21+ and Node 24. Run each code block below in a separate terminal,
+starting from the repository root.
+
+Start the backend:
 
 ```sh
 cd backend
@@ -32,19 +35,36 @@ See [the beta runbook](deployment/BETA.md) for phone setup, PostgreSQL configura
 container deployment, testing, and release limitations. Dockerfiles and `compose.yaml`
 are supplied for a separate web/backend/PostgreSQL environment.
 
-## Validate
+## Build and test
+
+Requires JDK 21+ and Node 24. Run each code block below separately, starting from
+the repository root. You do not need to start the app manually first.
+
+### Build backend and run tests
+
+This command cleans previous build output, compiles and packages the backend,
+runs enabled tests, and generates a JaCoCo coverage report.
 
 ```sh
 cd backend
 ./mvnw --batch-mode clean verify
 ```
 
+### Check, build, and test the frontend
+
+Install the locked dependencies, check TypeScript types, build the web app, and
+run browser integration tests:
+
 ```sh
 cd frontend
+npm ci
 npm run typecheck
 npm run export:web
 npm run test:e2e
 ```
+
+`typecheck` checks types without generating output. `export:web` builds the web
+app into `frontend/dist`. `test:e2e` runs the Playwright browser integration tests.
 
 The browser suite requires Google Chrome and starts local servers if they are not already
 running. Backend tests use an isolated in-memory database. Live PostgreSQL connectivity
@@ -77,3 +97,30 @@ an already-used key returns 409.
 The seed catalog is deliberately small. This private beta has no password reset or email
 verification; native-device and hosted PostgreSQL verification remain release steps.
 No deployment is performed by adding these files.
+
+## Currently Operational Usecases
+
+| Create an account and sign in | Register with email/password, sign in, restore a valid session, and sign out. |
+
+| Log a workout | Select catalog exercises, enter weight and reps, edit or remove logged sets before saving, and review the workout. |
+
+| Resume a workout draft | Recover logged sets on the same device after reloading and signing into the same account. |
+
+| Save a completed workout | Persist the workout and retry an interrupted save without creating a duplicate. Saving requires a connection to the backend. |
+
+| Review workout history | Browse your saved workouts and open their exercise and set details. |
+
+| View strength progress | Select an exercise to see per-workout estimated one-rep max, training volume, changes from the previous session, and personal records. |
+
+| Find an exercise alternative | Choose available equipment, optionally restrict results to beginner exercises, and select from up to three ranked substitutes. Previously logged sets keep their original exercise. |
+
+| Read exercise instructions | Open the selected exercise's text instructions and equipment requirements. |
+
+The current catalog contains twelve exercises, and all logged weights use pounds
+(lb). History and progress are scoped to the signed-in account.
+
+Editing and deleting **saved** workouts are required for the first beta but are
+not implemented yet. Consistency tracking (calendar, heatmap, and streaks) is
+deferred until after the first beta; its existing services and UI components are
+not connected to the beta app. Weekly-goal persistence, video form analysis,
+password reset, and email verification are also unavailable.

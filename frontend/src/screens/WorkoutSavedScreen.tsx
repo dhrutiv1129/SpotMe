@@ -24,11 +24,11 @@ export interface SavedWorkoutReceipt {
 interface Props {
   receipt: SavedWorkoutReceipt;
   onViewSession: (sessionId: string) => void;
-  onViewHistory: () => void;
+  onReturnToTrain: () => void;
 }
 
 /** Shows totals and streaks returned after the workout is saved. */
-export function WorkoutSavedScreen({receipt, onViewSession, onViewHistory}: Props) {
+export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.header}>Workout saved</Text>
@@ -74,7 +74,7 @@ export function WorkoutSavedScreen({receipt, onViewSession, onViewHistory}: Prop
         </View>
       </View>
       <Button label="View saved session" onPress={() => onViewSession(receipt.sessionId)} />
-      <Button label="View workout history" variant="secondary" onPress={onViewHistory} />
+      <Button label="Return to Train" variant="secondary" onPress={onReturnToTrain} />
     </ScrollView>
   );
 }

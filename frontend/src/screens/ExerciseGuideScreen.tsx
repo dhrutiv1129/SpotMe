@@ -1,5 +1,5 @@
 import React, {useRef, useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
 
@@ -7,10 +7,8 @@ export interface ExerciseGuide {
   exerciseId: string;
   name: string;
   originalExerciseName: string;
-  muscleEquipmentLabel: string;
   targetLabel: string;
-  equipmentLabel: string;
-  loadInstructions: string;
+  loadLabel: string;
   cues: Array<{id: string; text: string}>;
 }
 
@@ -44,27 +42,20 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Pressable accessibilityRole="button" onPress={onBack} disabled={busy} style={styles.back}>
-        <Text style={styles.backLabel}>‹   {guide.name}</Text>
-      </Pressable>
-      <View style={styles.heading}>
-        <Text accessibilityRole="header" style={styles.title}>{guide.name}</Text>
-        <Text style={styles.body}>Selected replacement · review before switching.</Text>
+      <View style={styles.header}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to exercise alternatives" onPress={onBack} disabled={busy} style={styles.back}>
+          <Image source={require('../assets/back.png')} style={styles.headerIcon} />
+          <Text style={styles.backLabel}>Exercise guide</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close guide and keep current exercise" onPress={onKeepExercise} disabled={busy} style={styles.close}>
+          <Image source={require('../assets/close.png')} style={styles.headerIcon} />
+        </Pressable>
       </View>
       <View style={styles.hero}>
-        <Text style={styles.eyebrow}>REPLACEMENT EXERCISE</Text>
-        <Text style={styles.badge}>Swapped for {guide.originalExerciseName.toLowerCase()}</Text>
-        <Text style={styles.heroTitle}>{guide.name}</Text>
-        <Text style={styles.heroBody}>{guide.muscleEquipmentLabel}</Text>
+        <Text style={styles.eyebrow}>Replacing {guide.originalExerciseName}</Text>
+        <Text accessibilityRole="header" style={styles.heroTitle}>{guide.name}</Text>
+        <Text style={styles.heroBody}>{guide.loadLabel}</Text>
         <Text style={styles.target}>{guide.targetLabel}</Text>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Equipment</Text>
-        <Text style={styles.equipment}>{guide.equipmentLabel}</Text>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>How to log load</Text>
-        <Text style={styles.load}>{guide.loadInstructions}</Text>
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Form cues</Text>
@@ -75,35 +66,45 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
           </View>
         ))}
       </View>
-      <Text style={styles.note}>Warm up first. Stop if you feel pain.</Text>
+      <View style={styles.note}>
+        <Image source={require('../assets/shield-check.png')} style={styles.safetyIcon} />
+        <Text style={[styles.body, styles.noteText]}>Warm up first. Stop if you feel pain.</Text>
+      </View>
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-      <Button label="Use this exercise" busy={busy} onPress={() => {void useExercise();}} />
-      <Button label="Keep current exercise" variant="text" disabled={busy} onPress={onKeepExercise} />
+      <View style={styles.actions}>
+        <Button label="Use this exercise" busy={busy} onPress={() => {void useExercise();}} />
+        <Pressable accessibilityRole="button" disabled={busy} onPress={onKeepExercise} style={styles.keep}>
+          <Text style={styles.keepLabel}>Keep current exercise</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 22},
-  back: {minHeight: 44, justifyContent: 'center'},
+  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
+  back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1},
+  headerIcon: {width: 22, height: 22},
+  close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
-  heading: {gap: 8},
-  title: {color: colors.ink, fontSize: 32, fontWeight: '700', letterSpacing: -0.7},
   body: {color: colors.muted, fontSize: 13, lineHeight: 20},
-  hero: {backgroundColor: colors.ink, borderRadius: 22, padding: 20, gap: 16},
-  eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.2},
-  badge: {alignSelf: 'flex-start', backgroundColor: colors.pale, color: colors.green, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '700'},
-  heroTitle: {color: colors.surface, fontSize: 28, fontWeight: '700'},
-  heroBody: {color: '#D4DDD1', fontSize: 13},
+  hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
+  eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase'},
+  heroTitle: {color: colors.surface, fontSize: 32, lineHeight: 36, fontWeight: '700', letterSpacing: -1.2},
+  heroBody: {color: colors.pale, fontSize: 13},
   target: {color: colors.lime, fontSize: 15},
   section: {gap: 10},
-  sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700'},
-  equipment: {color: colors.ink, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 14, fontSize: 14},
-  load: {color: colors.ink, backgroundColor: colors.pale, borderRadius: 16, padding: 14, fontSize: 13, lineHeight: 20},
+  sectionTitle: {color: colors.ink, fontSize: 16, fontWeight: '700'},
   cue: {flexDirection: 'row', gap: 12, alignItems: 'flex-start'},
-  cueNumber: {color: colors.green, backgroundColor: colors.pale, borderRadius: 10, padding: 8, fontSize: 11, fontWeight: '700'},
+  cueNumber: {color: colors.green, backgroundColor: colors.pale, borderRadius: 10, width: 28, height: 28, lineHeight: 28, textAlign: 'center', fontSize: 11, fontWeight: '700'},
   cueText: {flex: 1, paddingTop: 4},
-  note: {backgroundColor: '#F8EED8', color: colors.muted, borderRadius: 16, padding: 16, fontSize: 13},
+  note: {backgroundColor: '#F7EDD8', borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10},
+  safetyIcon: {width: 19, height: 19},
+  noteText: {flex: 1},
+  actions: {gap: 12},
+  keep: {minHeight: 44, justifyContent: 'center', alignItems: 'center'},
+  keepLabel: {color: colors.green, fontSize: 13},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},
 });

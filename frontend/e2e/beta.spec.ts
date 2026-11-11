@@ -65,6 +65,39 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   await expect(
     page.getByRole("button", { name: "Goblet squat", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Find alternatives", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", {
+      name: "Beginner alternatives only",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await page.getByLabel("Weight (lb)", { exact: true }).fill("95");
+  await page.getByLabel("Reps", { exact: true }).fill("10");
+  await page.getByRole("button", { name: /Swap exercise/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Find an alternative", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to workout", exact: true })
+    .click();
+  await expect(page.getByLabel("Weight (lb)", { exact: true })).toHaveValue(
+    "95",
+  );
+  await expect(page.getByLabel("Reps", { exact: true })).toHaveValue("10");
+  await page.getByRole("button", { name: /Swap exercise/ }).click();
+  await page
+    .getByRole("button", { name: "Find alternatives", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Swap an exercise/ }).click();
+  await expect(
+    page.getByText("Available equipment", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Find alternatives", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Find alternatives", exact: true })
     .click();

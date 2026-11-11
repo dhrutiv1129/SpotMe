@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,13 +10,13 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import {colors} from '../theme';
+} from "react-native";
+import { colors, controls, radii, spacing, typography } from "../theme";
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'text';
+  variant?: "primary" | "secondary" | "danger" | "text";
   disabled?: boolean;
   busy?: boolean;
 }
@@ -24,30 +24,35 @@ interface ButtonProps {
 export function Button({
   label,
   onPress,
-  variant = 'primary',
+  variant = "primary",
   disabled,
   busy,
 }: ButtonProps) {
-  const filled = variant === 'primary' || variant === 'danger';
+  const [focused, setFocused] = useState(false);
+  const foreground =
+    variant === "primary"
+      ? colors.onAccent
+      : variant === "danger"
+        ? colors.onDanger
+        : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{disabled: !!disabled || !!busy, busy: !!busy}}
+      accessibilityState={{ disabled: !!disabled || !!busy, busy: !!busy }}
       disabled={disabled || busy}
       onPress={onPress}
-      style={({pressed}) => [
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={({ pressed }) => [
         styles.button,
         buttonStyles[variant],
         (disabled || busy) && styles.disabled,
         pressed && styles.pressed,
+        focused && styles.focused,
       ]}
     >
-      {busy && (
-        <ActivityIndicator color={filled ? colors.surface : colors.green} />
-      )}
-      <Text style={[styles.buttonText, filled && styles.lightText]}>
-        {label}
-      </Text>
+      {busy && <ActivityIndicator color={foreground} />}
+      <Text style={[styles.buttonText, { color: foreground }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -69,6 +74,7 @@ export function NumberField({
   disabled,
   integer,
 }: NumberFieldProps) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -77,10 +83,18 @@ export function NumberField({
         accessibilityHint={error}
         value={value}
         onChangeText={onChange}
-        keyboardType={integer ? 'number-pad' : 'decimal-pad'}
+        keyboardType={integer ? "number-pad" : "decimal-pad"}
         editable={!disabled}
         selectTextOnFocus
-        style={[styles.input, !!error && styles.invalid]}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        aria-invalid={!!error}
+        style={[
+          styles.input,
+          !!error && styles.invalid,
+          focused && styles.focused,
+          disabled && styles.disabled,
+        ]}
       />
       {!!error && (
         <Text accessibilityRole="alert" style={styles.error}>
@@ -98,7 +112,7 @@ interface SheetProps {
   children: React.ReactNode;
 }
 
-export function Sheet({title, onClose, locked, children}: SheetProps) {
+export function Sheet({ title, onClose, locked, children }: SheetProps) {
   return (
     <Modal
       visible
@@ -110,7 +124,7 @@ export function Sheet({title, onClose, locked, children}: SheetProps) {
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -138,71 +152,76 @@ export function Sheet({title, onClose, locked, children}: SheetProps) {
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 54,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
+    minHeight: controls.minTarget,
+    borderRadius: radii.control,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
   },
-  primary: {backgroundColor: colors.green},
+  primary: { backgroundColor: colors.green },
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.inputBorder,
   },
-  danger: {backgroundColor: colors.danger},
-  text: {backgroundColor: 'transparent'},
+  danger: { backgroundColor: colors.danger },
+  text: { backgroundColor: "transparent" },
   buttonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.green,
-    textAlign: 'center',
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.ink,
+    textAlign: "center",
   },
-  lightText: {color: colors.surface},
-  disabled: {opacity: 0.45},
-  pressed: {opacity: 0.75},
-  field: {gap: 6, flex: 1},
-  label: {color: colors.green, fontSize: 10, fontWeight: '700'},
+  focused: {
+    outlineStyle: "solid",
+    outlineWidth: 2,
+    outlineColor: colors.green,
+    outlineOffset: 3,
+  },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.75 },
+  field: { gap: spacing.sm, flex: 1, minWidth: 0 },
+  label: { color: colors.muted, ...typography.label },
   input: {
-    minHeight: 54,
+    minHeight: controls.inputHeight,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderColor: colors.inputBorder,
+    borderRadius: radii.control,
     paddingHorizontal: 16,
     color: colors.ink,
     backgroundColor: colors.surface,
-    fontSize: 16,
+    ...typography.body,
   },
-  invalid: {borderColor: colors.danger},
-  error: {fontSize: 12, color: colors.danger},
+  invalid: { borderColor: colors.errorText },
+  error: { ...typography.label, color: colors.errorText },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(22, 39, 28, 0.42)',
-    justifyContent: 'flex-end',
+    backgroundColor: colors.overlay,
+    justifyContent: "flex-end",
   },
   sheet: {
-    maxHeight: '92%',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    maxHeight: "92%",
+    borderTopLeftRadius: radii.sheet,
+    borderTopRightRadius: radii.sheet,
     backgroundColor: colors.surface,
     paddingTop: 16,
   },
   handle: {
     width: 44,
     height: 4,
-    backgroundColor: '#D6D9D0',
+    backgroundColor: colors.border,
     borderRadius: 4,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 18,
   },
-  sheetContent: {paddingHorizontal: 22, paddingBottom: 32, gap: 14},
+  sheetContent: { paddingHorizontal: 22, paddingBottom: 32, gap: 14 },
   sheetTitle: {
     color: colors.ink,
     fontSize: 30,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: -0.7,
   },
 });

@@ -154,5 +154,5 @@ const styles = StyleSheet.create({
   exerciseName: {color: colors.ink, fontSize: 15, fontWeight: '600'},
   order: {color: colors.green, fontSize: 12, fontWeight: '700'},
   fields: {flexDirection: 'row', gap: 10},
-  error: {color: colors.danger, fontSize: 13, lineHeight: 19},
+  error: {color: colors.errorText, fontSize: 13, lineHeight: 19},
 });

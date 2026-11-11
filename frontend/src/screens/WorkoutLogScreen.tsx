@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pause: {color: colors.ink, fontSize: 24},
-  hero: {backgroundColor: colors.ink, borderRadius: 22, padding: 20, gap: 14},
+  hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 14},
   between: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   heroTime: {color: '#D4DDD1', fontSize: 12},
   heroTitle: {
-    color: colors.surface,
+    color: colors.onHero,
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.5,
@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
   nextName: {color: colors.ink, fontSize: 14},
   notice: {backgroundColor: colors.pale, borderRadius: 18, padding: 16, gap: 8},
   error: {
-    color: colors.danger,
+    color: colors.errorText,
     fontSize: 13,
     lineHeight: 19,
     backgroundColor: colors.dangerSoft,

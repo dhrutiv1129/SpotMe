@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   savedLabel: {color: colors.lime, fontSize: 11, fontWeight: '700'},
   metrics: {flexDirection: 'row', gap: 18},
   metric: {flex: 1, gap: 5},
-  heroValue: {color: colors.surface, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
+  heroValue: {color: colors.onHero, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
   heroCaption: {color: '#C1CCBD', fontSize: 11, lineHeight: 16},
   section: {gap: 12},
   sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700', letterSpacing: -0.4},

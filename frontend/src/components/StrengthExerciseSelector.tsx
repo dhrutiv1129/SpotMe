@@ -127,7 +127,7 @@ export function StrengthExerciseSelector({selectedExerciseId, searchExercises, o
 const styles = StyleSheet.create({
   overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13, 26, 18, 0.38)'},
   sheet: {maxHeight: '92%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 16},
-  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: '#D6D9D2', alignSelf: 'center', marginBottom: 16},
+  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16},
   content: {paddingHorizontal: 22, paddingBottom: 34, gap: 16},
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, lineHeight: 33, fontWeight: '700', letterSpacing: -1.1},
@@ -142,8 +142,8 @@ const styles = StyleSheet.create({
   info: {flex: 1, gap: 3},
   name: {color: colors.ink, fontSize: 14, fontWeight: '700', lineHeight: 20},
   description: {color: colors.muted, fontSize: 11, lineHeight: 16},
-  unselected: {width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: '#C9D4C7'},
+  unselected: {width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.border},
   cancel: {minHeight: 54, borderWidth: 1, borderColor: colors.border, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16},
   cancelLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
-  error: {color: colors.danger, fontSize: 13, lineHeight: 19},
+  error: {color: colors.errorText, fontSize: 13, lineHeight: 19},
 });

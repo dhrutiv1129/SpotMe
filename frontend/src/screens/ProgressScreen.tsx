@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   unit: {color: colors.muted, fontSize: 18, fontWeight: '500'},
   badge: {color: colors.green, backgroundColor: colors.pale, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, fontSize: 11, fontWeight: '700', flexShrink: 1},
   explanation: {backgroundColor: colors.pale, padding: 16, borderRadius: 18, flexDirection: 'row', gap: 12},
-  comparison: {flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: '#DCE7D8', padding: 12, gap: 8},
+  comparison: {flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8},
   comparisonTitle: {color: colors.green, fontSize: 11, fontWeight: '700'},
   bars: {flexDirection: 'row', alignItems: 'flex-end', gap: 8, minHeight: 60},
   barColumn: {flex: 1, alignItems: 'center', gap: 6},

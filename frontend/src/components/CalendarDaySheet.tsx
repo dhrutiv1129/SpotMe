@@ -39,7 +39,7 @@ export function CalendarDaySheet({workout, onClose, onViewWorkout}: Props) {
 const styles = StyleSheet.create({
   overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13, 26, 18, 0.38)'},
   sheet: {backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 34, gap: 16},
-  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: '#D6D9D2', alignSelf: 'center'},
+  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center'},
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, fontWeight: '700', lineHeight: 33, letterSpacing: -1.1},
   close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},

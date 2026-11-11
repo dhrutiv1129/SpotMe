@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 10,
   },
-  checkText: {fontSize: 22, color: colors.surface},
+  checkText: {fontSize: 22, color: colors.onAccent},
   draftRow: {
     flexDirection: 'row',
     alignItems: 'center',

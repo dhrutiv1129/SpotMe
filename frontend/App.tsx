@@ -25,7 +25,7 @@ import type {
 } from "./src/beta/api";
 import { loadDraft, newDraft, payload, persistDraft } from "./src/beta/draft";
 import type { Draft } from "./src/beta/draft";
-import { colors } from "./src/theme";
+import { colors, controls, radii, spacing, typography } from "./src/theme";
 
 type Screen =
   | "home"
@@ -282,8 +282,8 @@ export default function App() {
   if (booting)
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text>Opening SpotMe…</Text>
+        <ActivityIndicator color={colors.green} />
+        <Text style={styles.body}>Opening SpotMe…</Text>
       </View>
     );
   if (!user)
@@ -310,6 +310,7 @@ export default function App() {
           <TextInput
             accessibilityLabel="Email"
             placeholder="Email"
+            placeholderTextColor={colors.muted}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -318,6 +319,7 @@ export default function App() {
             style={styles.input}
           />
           <TextInput
+            placeholderTextColor={colors.muted}
             accessibilityLabel="Password"
             placeholder="Password"
             secureTextEntry
@@ -466,6 +468,7 @@ export default function App() {
         <TextInput
           accessibilityLabel="Search exercises by name"
           placeholder="Search exercises by name"
+          placeholderTextColor={colors.muted}
           value={exerciseQuery}
           onChangeText={setExerciseQuery}
           autoCapitalize="none"
@@ -1017,7 +1020,7 @@ export default function App() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
@@ -1146,7 +1149,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 28,
-    gap: 20,
+    gap: spacing.lg,
     backgroundColor: colors.background,
   },
   auth: {
@@ -1155,15 +1158,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     padding: 28,
     paddingTop: 64,
-    gap: 20,
+    gap: spacing.lg,
   },
   content: {
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
-    padding: 24,
+    padding: spacing.screen,
     paddingBottom: 64,
-    gap: 20,
+    gap: spacing.lg,
   },
   nav: {
     paddingHorizontal: 24,
@@ -1181,63 +1184,65 @@ const styles = StyleSheet.create({
     color: colors.green,
   },
   title: {
-    fontSize: 36,
-    fontWeight: "700",
-    letterSpacing: -1,
+    ...typography.title,
+    letterSpacing: -0.5,
     color: colors.ink,
   },
-  heading: { fontSize: 19, fontWeight: "700", color: colors.ink },
-  body: { fontSize: 15, lineHeight: 23, color: colors.muted },
-  small: { fontSize: 12, lineHeight: 18, color: colors.muted },
+  heading: { ...typography.section, color: colors.ink },
+  body: { ...typography.body, color: colors.muted },
+  small: { ...typography.caption, color: colors.muted },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
+    borderColor: colors.inputBorder,
+    borderRadius: radii.control,
     padding: 16,
-    fontSize: 16,
+    minHeight: controls.inputHeight,
+    ...typography.body,
     backgroundColor: colors.surface,
     color: colors.ink,
   },
   hero: {
-    padding: 24,
-    borderRadius: 24,
+    padding: spacing.screen,
+    borderRadius: radii.card,
     backgroundColor: colors.hero,
     gap: 16,
   },
-  heroTitle: { fontSize: 28, fontWeight: "700", color: colors.surface },
-  heroText: { fontSize: 15, lineHeight: 23, color: colors.pale },
+  heroTitle: { ...typography.title, color: colors.onHero },
+  heroText: { ...typography.body, color: colors.muted },
   card: {
     padding: 20,
-    borderRadius: 18,
+    borderRadius: radii.card,
     backgroundColor: colors.surface,
     gap: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  wrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
+    minHeight: controls.minTarget,
+    justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: radii.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.inputBorder,
     backgroundColor: colors.surface,
   },
   chipSelected: { backgroundColor: colors.green, borderColor: colors.green },
-  chipText: { fontSize: 14, color: colors.ink },
-  chipTextSelected: { color: colors.surface },
+  chipText: { ...typography.label, color: colors.ink },
+  chipTextSelected: { color: colors.onAccent },
   error: {
-    color: colors.danger,
+    color: colors.errorText,
     backgroundColor: colors.dangerSoft,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.control,
     lineHeight: 22,
   },
   notice: {
     backgroundColor: colors.pale,
     color: colors.ink,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.control,
     lineHeight: 22,
   },
   track: {

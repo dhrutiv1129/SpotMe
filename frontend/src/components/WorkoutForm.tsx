@@ -92,7 +92,7 @@ export function WorkoutForm({
 const styles = StyleSheet.create({
   container: {gap: 16},
   error: {
-    color: colors.danger,
+    color: colors.errorText,
     fontSize: 13,
     lineHeight: 19,
     backgroundColor: colors.dangerSoft,

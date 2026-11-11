@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
   loggedSet: {backgroundColor: colors.pale, borderRadius: 8, paddingVertical: 10},
   setValue: {color: colors.ink, fontSize: 14},
   loggedLabel: {color: colors.green, fontSize: 11, fontWeight: '600'},
-  error: {color: colors.danger, fontSize: 13, lineHeight: 19},
+  error: {color: colors.errorText, fontSize: 13, lineHeight: 19},
 });

@@ -190,5 +190,5 @@ export function ProgressNavigator({
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   loading: {padding: 12},
-  error: {color: colors.danger, fontSize: 13, lineHeight: 19, padding: 16},
+  error: {color: colors.errorText, fontSize: 13, lineHeight: 19, padding: 16},
 });

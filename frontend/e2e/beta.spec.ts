@@ -43,6 +43,18 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   await page
     .getByRole("button", { name: "Clear search and filters", exact: true })
     .click();
+  await page.getByRole("tab", { name: "Progress", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Progress", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("tab", { name: "Progress", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "History", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Every session, saved.", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Workout", exact: true }).click();
   await search.fill("  LEG PRESS  ");
   await expect(
     page.getByText("1 exercise found", { exact: true }),
@@ -76,6 +88,12 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   ).toHaveCount(0);
   await page.getByLabel("Weight (lb)", { exact: true }).fill("95");
   await page.getByLabel("Reps", { exact: true }).fill("10");
+  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("tab", { name: "Workout", exact: true }).click();
+  await expect(page.getByLabel("Weight (lb)", { exact: true })).toHaveValue(
+    "95",
+  );
+  await expect(page.getByLabel("Reps", { exact: true })).toHaveValue("10");
   await page.getByRole("button", { name: /Swap exercise/ }).click();
   await expect(
     page.getByRole("heading", { name: "Find an alternative", exact: true }),

@@ -36,6 +36,7 @@ type Screen =
   | "guide"
   | "history"
   | "detail"
+  | "progress-picker"
   | "progress";
 const number = (value: number | null | undefined) =>
   value == null
@@ -411,6 +412,27 @@ export default function App() {
             void showHistory();
           }}
         />
+        <Button
+          label="See your progress"
+          variant="secondary"
+          onPress={() => navigate("progress-picker")}
+        />
+        <Button
+          label="Sign out"
+          variant="text"
+          disabled={busy}
+          onPress={() => {
+            void logout();
+          }}
+        />
+      </>
+    );
+  else if (screen === "progress-picker")
+    content = (
+      <>
+        <Text accessibilityRole="header" style={styles.title}>
+          Progress
+        </Text>
         <Text style={styles.heading}>See your progress</Text>
         <Text style={styles.body}>
           Choose an exercise to see your logged sessions and personal records.
@@ -426,14 +448,6 @@ export default function App() {
             />
           ))}
         </View>
-        <Button
-          label="Sign out"
-          variant="text"
-          disabled={busy}
-          onPress={() => {
-            void logout();
-          }}
-        />
       </>
     );
   else if (screen === "workout")
@@ -939,6 +953,28 @@ export default function App() {
         }}
       />
     ) : null;
+  const activeTab =
+    screen === "home"
+      ? "Home"
+      : screen === "progress" || screen === "progress-picker"
+        ? "Progress"
+        : screen === "history" || screen === "detail"
+          ? "History"
+          : "Workout";
+  const tabs = [
+    { label: "Home", open: () => navigate("home") },
+    {
+      label: "Workout",
+      open: () => navigate(draft.pending ? "review" : "workout"),
+    },
+    {
+      label: "History",
+      open: () => {
+        void showHistory();
+      },
+    },
+    { label: "Progress", open: () => navigate("progress-picker") },
+  ];
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -954,6 +990,31 @@ export default function App() {
           <Text style={styles.brand}>SPOTME</Text>
         </Pressable>
         <Text style={styles.small}>PRIVATE BETA · LB</Text>
+      </View>
+      <View accessibilityRole="tablist" style={styles.tabs}>
+        {tabs.map((tab) => (
+          <Pressable
+            key={tab.label}
+            accessibilityRole="tab"
+            aria-selected={activeTab === tab.label}
+            accessibilityState={{
+              selected: activeTab === tab.label,
+              disabled: busy,
+            }}
+            disabled={busy}
+            onPress={tab.open}
+            style={[styles.tab, activeTab === tab.label && styles.tabSelected]}
+          >
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === tab.label && styles.tabLabelSelected,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       {specialized ? (
         <View style={styles.flex}>
@@ -1018,6 +1079,26 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 52 : 24,
   },
   flex: { flex: 1 },
+  tabs: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tab: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
+  },
+  tabSelected: {
+    borderBottomColor: colors.green,
+    backgroundColor: colors.pale,
+  },
+  tabLabel: { fontSize: 14, color: colors.muted },
+  tabLabelSelected: { color: colors.green, fontWeight: "700" },
   center: {
     flex: 1,
     justifyContent: "center",

@@ -52,6 +52,9 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<Screen>("home");
   const [catalog, setCatalog] = useState<Exercise[]>([]);
+  const [exerciseQuery, setExerciseQuery] = useState("");
+  const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
+  const [equipmentFilter, setEquipmentFilter] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(newDraft);
   const draftRef = useRef(draft);
   const writes = useRef<Promise<void>>(Promise.resolve());
@@ -167,6 +170,19 @@ export default function App() {
   const exercise = catalog.find((e) => e.id === selected);
   const entry = draft.exercises.find((e) => e.exerciseId === selected);
   const equipment = [...new Set(catalog.flatMap((e) => e.requiredEquipment))];
+  const muscleGroups = [...new Set(catalog.map((e) => e.muscleGroup))];
+  const matchingExercises = catalog.filter(
+    (e) =>
+      e.name.toLowerCase().includes(exerciseQuery.trim().toLowerCase()) &&
+      (muscleFilter === null || e.muscleGroup === muscleFilter) &&
+      (equipmentFilter === null ||
+        e.requiredEquipment.includes(equipmentFilter)),
+  );
+  function clearExerciseFilters() {
+    setExerciseQuery("");
+    setMuscleFilter(null);
+    setEquipmentFilter(null);
+  }
   const exerciseName = (id: number) =>
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
@@ -430,8 +446,77 @@ export default function App() {
           device until you finish.
         </Text>
         <Text style={styles.heading}>Choose an exercise</Text>
+        <TextInput
+          accessibilityLabel="Search exercises by name"
+          placeholder="Search exercises by name"
+          value={exerciseQuery}
+          onChangeText={setExerciseQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={styles.input}
+        />
+        <Text style={styles.small}>Muscle group</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          contentContainerStyle={styles.wrap}
+        >
+          <Chip
+            label="All muscles"
+            selected={muscleFilter === null}
+            onPress={() => setMuscleFilter(null)}
+          />
+          {muscleGroups.map((group) => (
+            <Chip
+              key={group}
+              label={group}
+              selected={muscleFilter === group}
+              onPress={() => setMuscleFilter(group)}
+            />
+          ))}
+        </ScrollView>
+        <Text style={styles.small}>
+          Equipment · other equipment may also be required
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          contentContainerStyle={styles.wrap}
+        >
+          <Chip
+            label="All equipment"
+            selected={equipmentFilter === null}
+            onPress={() => setEquipmentFilter(null)}
+          />
+          {equipment.map((item) => (
+            <Chip
+              key={item}
+              label={item}
+              selected={equipmentFilter === item}
+              onPress={() => setEquipmentFilter(item)}
+            />
+          ))}
+        </ScrollView>
+        <Text accessibilityLiveRegion="polite" style={styles.small}>
+          {matchingExercises.length}{" "}
+          {matchingExercises.length === 1 ? "exercise" : "exercises"} found
+        </Text>
+        {(exerciseQuery !== "" ||
+          muscleFilter !== null ||
+          equipmentFilter !== null) && (
+          <Button
+            label="Clear search and filters"
+            variant="text"
+            onPress={clearExerciseFilters}
+          />
+        )}
+        {matchingExercises.length === 0 && (
+          <Text style={styles.body}>
+            No exercises match. Try another name or clear your filters.
+          </Text>
+        )}
         <View style={styles.wrap}>
-          {catalog.map((e) => (
+          {matchingExercises.map((e) => (
             <Chip
               key={e.id}
               label={e.name}

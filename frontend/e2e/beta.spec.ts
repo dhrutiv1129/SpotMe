@@ -26,7 +26,45 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   await page
     .getByRole("button", { name: "Start a workout", exact: true })
     .click();
+  const search = page.getByRole("textbox", {
+    name: "Search exercises by name",
+  });
+  await page.getByRole("button", { name: "legs", exact: true }).click();
+  await page.getByRole("button", { name: "dumbbell", exact: true }).click();
+  await expect(
+    page.getByText("1 exercise found", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Goblet squat", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Leg press", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Clear search and filters", exact: true })
+    .click();
+  await search.fill("  LEG PRESS  ");
+  await expect(
+    page.getByText("1 exercise found", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Goblet squat", exact: true }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Leg press", exact: true }).click();
+  await search.fill("no-such-exercise");
+  await expect(
+    page.getByText(
+      "No exercises match. Try another name or clear your filters.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel("Weight (lb)", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Clear search and filters", exact: true })
+    .click();
+  await expect(search).toHaveValue("");
+  await expect(
+    page.getByRole("button", { name: "Goblet squat", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Find alternatives", exact: true })
     .click();

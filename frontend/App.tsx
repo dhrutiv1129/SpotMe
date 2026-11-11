@@ -31,6 +31,7 @@ type Screen =
   | "home"
   | "workout"
   | "review"
+  | "alternative-options"
   | "alternatives"
   | "guide"
   | "history"
@@ -557,9 +558,7 @@ export default function App() {
                 setWeight(String(set.weight));
                 setReps(String(set.reps));
               }}
-              onSwap={() => {
-                void showAlternatives();
-              }}
+              onSwap={() => navigate("alternative-options")}
               onGuide={() => {
                 setNotice(exercise.instructions);
               }}
@@ -639,38 +638,6 @@ export default function App() {
                 />
               </View>
             )}
-            <Text style={styles.heading}>Machine unavailable?</Text>
-            <Text style={styles.body}>
-              Select only equipment you can use right now.
-            </Text>
-            <View style={styles.wrap}>
-              {equipment.map((e) => (
-                <Chip
-                  key={e}
-                  label={e}
-                  selected={available.includes(e)}
-                  onPress={() =>
-                    setAvailable(
-                      available.includes(e)
-                        ? available.filter((v) => v !== e)
-                        : [...available, e],
-                    )
-                  }
-                />
-              ))}
-            </View>
-            <Chip
-              label="Beginner alternatives only"
-              selected={beginner}
-              onPress={() => setBeginner(!beginner)}
-            />
-            <Button
-              label="Find alternatives"
-              busy={busy}
-              onPress={() => {
-                void showAlternatives();
-              }}
-            />
           </>
         )}
         <Text style={styles.heading}>Logged so far</Text>
@@ -686,6 +653,55 @@ export default function App() {
           variant="secondary"
           disabled={!payload(draft).exercises.length || busy}
           onPress={() => navigate("review")}
+        />
+      </>
+    );
+  else if (screen === "alternative-options" && exercise)
+    content = (
+      <>
+        <Button
+          label="Back to workout"
+          variant="text"
+          disabled={busy}
+          onPress={() => navigate("workout")}
+        />
+        <Text accessibilityRole="header" style={styles.title}>
+          Find an alternative
+        </Text>
+        <Text style={styles.body}>
+          Replacing {exercise.name}. Choose the equipment you can use right now.
+          Your logged sets stay with their original exercise.
+        </Text>
+        <Text style={styles.heading}>Available equipment</Text>
+        <View style={styles.wrap}>
+          {equipment.map((e) => (
+            <Chip
+              key={e}
+              label={e}
+              selected={available.includes(e)}
+              disabled={busy}
+              onPress={() =>
+                setAvailable(
+                  available.includes(e)
+                    ? available.filter((v) => v !== e)
+                    : [...available, e],
+                )
+              }
+            />
+          ))}
+        </View>
+        <Chip
+          label="Beginner alternatives only"
+          selected={beginner}
+          disabled={busy}
+          onPress={() => setBeginner(!beginner)}
+        />
+        <Button
+          label="Find alternatives"
+          busy={busy}
+          onPress={() => {
+            void showAlternatives();
+          }}
         />
       </>
     );
@@ -877,7 +893,7 @@ export default function App() {
           difficulty: a.difficulty.toLowerCase(),
           equipmentLabels: a.requiredEquipment,
         }))}
-        onBack={() => navigate("workout")}
+        onBack={() => navigate("alternative-options")}
         onViewGuide={(id) => {
           setGuide(catalog.find((e) => e.id === Number(id)) || null);
           navigate("guide");

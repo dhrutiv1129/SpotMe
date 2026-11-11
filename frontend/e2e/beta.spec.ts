@@ -149,6 +149,34 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   await expect(
     page.getByText("Heaviest weight: 25 lb", { exact: true }),
   ).toBeVisible();
+  const help = page.getByRole("button", {
+    name: "What do these numbers mean?",
+    exact: true,
+  });
+  await expect(
+    page.getByRole("heading", {
+      name: "Understanding your numbers",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(help).toHaveAttribute("aria-expanded", "false");
+  await help.click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Understanding your numbers",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Hide explanations", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Understanding your numbers",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+
   await expect(
     page.getByText("Best session volume: 200 lb", { exact: true }),
   ).toBeVisible();

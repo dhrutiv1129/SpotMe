@@ -24,7 +24,7 @@ interface Props {
   };
 }
 
-/** Connects exercise swaps and workout review while keeping the training form available. */
+/** Opens exercise swaps and workout review without losing the form. */
 export function WorkoutSessionNavigator(props: Props) {
   return <SessionFlow key={props.sessionId} {...props} />;
 }

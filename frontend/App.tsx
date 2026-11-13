@@ -26,6 +26,8 @@ import type {
 import { loadDraft, newDraft, payload, persistDraft } from "./src/beta/draft";
 import type { Draft } from "./src/beta/draft";
 import { colors } from "./src/theme";
+import { MainTabs } from "./src/navigation/MainTabs";
+import type { MainTab } from "./src/navigation/MainTabs";
 
 type Screen =
   | "home"
@@ -35,7 +37,9 @@ type Screen =
   | "guide"
   | "history"
   | "detail"
-  | "progress";
+  | "progress"
+  | "progressHome"
+  | "profile";
 const number = (value: number | null | undefined) =>
   value == null
     ? "—"
@@ -51,6 +55,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<Screen>("home");
+  const [activeTab, setActiveTab] = useState<MainTab>("train");
   const [catalog, setCatalog] = useState<Exercise[]>([]);
   const [draft, setDraft] = useState<Draft>(newDraft);
   const draftRef = useRef(draft);
@@ -110,6 +115,7 @@ export default function App() {
     draftRef.current = saved;
     setSelected(saved.exercises[0]?.exerciseId ?? null);
     setScreen(saved.pending ? "review" : "home");
+    setActiveTab("train");
     setReady(true);
   }
   async function boot() {
@@ -133,7 +139,7 @@ export default function App() {
     void boot();
   }, []);
 
-  // Serialize device writes; a save waits until its retry key and exact payload are durable.
+  // Save local changes in order. Keep the retry key and workout data before sending.
   async function updateDraft(value: Draft) {
     if (!user) return;
     const owner = user.id;
@@ -170,10 +176,23 @@ export default function App() {
   const exerciseName = (id: number) =>
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
+    if (next === "home") setActiveTab("train");
+    else if (["workout", "review", "alternatives", "guide"].includes(next))
+      setActiveTab("train");
+    else if (next === "progress" || next === "progressHome") setActiveTab("progress");
+    else if (next === "profile") setActiveTab("you");
     setError("");
     setNotice("");
     setScreen(next);
     setEditing(null);
+  }
+  function selectTab(tab: MainTab) {
+    if (busyRef.current || tab === activeTab) return;
+    setActiveTab(tab);
+    navigate(
+      tab === "train" ? (draftRef.current.pending ? "review" : draftRef.current.exercises.length ? "workout" : "home") :
+      tab === "progress" ? "progressHome" : "profile",
+    );
   }
   function addExercise(id: number) {
     editDraft((d) => ({
@@ -212,7 +231,7 @@ export default function App() {
           key: pending.key,
         });
       } catch (failure) {
-        // Explicit validation rejection cannot have committed; ambiguous failures retain the frozen payload.
+        // Invalid data was not saved. For other errors, keep the same data for a retry.
         if (failure instanceof ApiError && failure.status === 400)
           await updateDraft({ ...pending, pending: false });
         throw failure;
@@ -371,7 +390,7 @@ export default function App() {
     content = (
       <>
         <Text accessibilityRole="header" style={styles.title}>
-          Make today count.
+          Your training.
         </Text>
         <Text style={styles.body}>{user.email}</Text>
         <View style={styles.hero}>
@@ -417,6 +436,34 @@ export default function App() {
             void logout();
           }}
         />
+      </>
+    );
+  else if (screen === "profile")
+    content = (
+      <>
+        <Text accessibilityRole="header" style={styles.title}>Make it yours.</Text>
+        <Text style={styles.body}>Your account. Your training.</Text>
+        <View style={styles.card}>
+          <Text style={styles.heading}>Your account</Text>
+          <Text style={styles.body}>{user.email}</Text>
+        </View>
+        <Button label="Workout history" variant="secondary" onPress={() => { void showHistory(); }} />
+        <Text style={styles.small}>Workout loads use pounds (lb) in the current backend.</Text>
+        <Button label="Sign out" variant="text" disabled={busy} onPress={() => { void logout(); }} />
+      </>
+    );
+  else if (screen === "progressHome")
+    content = (
+      <>
+        <Text accessibilityRole="header" style={styles.title}>Small steps. Real strength.</Text>
+        <Text style={styles.body}>Choose an exercise to see your estimated one-rep max, training volume and personal records.</Text>
+        <View style={styles.wrap}>
+          {catalog.map(e => (
+            <Chip key={e.id} label={e.name} disabled={busy} onPress={() => { void showProgress(e.id); }} />
+          ))}
+        </View>
+        {!catalog.length && <Text style={styles.body}>No exercises are available yet.</Text>}
+        <Button label="Workout history" variant="secondary" onPress={() => { void showHistory(); }} />
       </>
     );
   else if (screen === "workout")
@@ -862,12 +909,12 @@ export default function App() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {screen !== "home" && (
+          {!["home", "progressHome", "profile"].includes(screen) && (
             <Button
-              label="Back to home"
+              label={activeTab === "progress" ? "Back to Progress" : activeTab === "you" ? "Back to You" : "Back to Train"}
               variant="text"
               disabled={busy}
-              onPress={() => navigate("home")}
+              onPress={() => navigate(activeTab === "progress" ? "progressHome" : activeTab === "you" ? "profile" : "home")}
             />
           )}
           {!!notice && (
@@ -880,6 +927,7 @@ export default function App() {
           {content}
         </ScrollView>
       )}
+      <MainTabs activeTab={activeTab} disabled={busy} onSelect={selectTab} />
     </KeyboardAvoidingView>
   );
 }

@@ -57,7 +57,7 @@ interface Props {
   onSaveForLater: (sessionId: string) => Promise<void>;
 }
 
-/** Server response drives totals and status; only form drafts and dialogs live here. */
+/** Uses totals and status from the backend. Keeps unsaved input and open dialogs here. */
 export function WorkoutLogScreen(props: Props) {
   if (props.loading) {
     return (

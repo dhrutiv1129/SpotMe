@@ -2,7 +2,7 @@ import React from 'react';
 import {Platform, StyleSheet, View, useWindowDimensions} from 'react-native';
 import {colors} from '../theme';
 
-/** Give desktop recordings a phone viewport; native and small screens stay full size. */
+/** Shows a phone frame on desktop. Phones use the full screen. */
 export function PhonePreview({children}: {children: React.ReactNode}) {
   const {width, height} = useWindowDimensions();
   if (Platform.OS !== 'web' || width < 480) return <>{children}</>;

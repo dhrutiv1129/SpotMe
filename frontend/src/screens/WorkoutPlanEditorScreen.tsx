@@ -29,7 +29,7 @@ function positiveInteger(value: string) {
   return value.trim() !== '' && Number.isSafeInteger(Number(value)) && Number(value) > 0;
 }
 
-/** Edits set and rep targets and returns after the plan is saved. */
+/** Edits planned sets and reps. Goes back after saving. */
 export function WorkoutPlanEditorScreen({
   plan, dateLabel, onSave, onSaved, onCancel,
 }: Props) {

@@ -18,7 +18,7 @@ interface Props {
   onViewStrength: () => void;
 }
 
-/** Connects workout review, the saved celebration and saved details. */
+/** Opens the review, save confirmation and workout details. */
 export function WorkoutCompletionNavigator(props: Props) {
   return <CompletionFlow key={props.workout.sessionId} {...props} />;
 }

@@ -18,7 +18,7 @@ interface Props {
   onCreateWorkout?: () => void;
 }
 
-/** Connects the saved plan to its editor and the start-workout action. */
+/** Lets users edit a saved plan or start a workout. */
 export function WorkoutPlanNavigator(props: Props) {
   return <PlanFlow key={props.workoutPlan.summary.id} {...props} />;
 }

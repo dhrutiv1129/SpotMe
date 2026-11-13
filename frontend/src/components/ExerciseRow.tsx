@@ -38,7 +38,7 @@ interface Props {
   onGuide: (exerciseId: string) => void;
 }
 
-/** Shows an exercise and its sets. */
+/** Displays one exercise and its sets without calculating workout results. */
 export function ExerciseRow({
   exercise, weight, reps, weightError, repsError, disabled,
   onWeightChange, onRepsChange, onEditSet, onSwap, onGuide,

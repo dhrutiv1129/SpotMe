@@ -27,7 +27,7 @@ interface Props {
   onReturnToTrain: () => void;
 }
 
-/** Shows totals and streaks after a successful save. */
+/** Shows totals and streaks returned after the workout is saved. */
 export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>

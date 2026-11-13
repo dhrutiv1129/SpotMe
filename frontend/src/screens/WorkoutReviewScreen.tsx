@@ -30,7 +30,7 @@ interface Props {
   onSaved: (receipt: SavedWorkoutReceipt) => void;
 }
 
-/** Shows logged sets for review. Unsaved input stays in the workout form. */
+/** Shows logged sets for review. Drafts stay in the workout form. */
 export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved}: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

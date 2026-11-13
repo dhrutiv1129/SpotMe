@@ -25,7 +25,7 @@ interface DraftProps extends BaseProps {
   onRepsChange: (value: string) => void;
 }
 
-/** Shows a set as logged after the save is confirmed. */
+/** Controlled row: drafts become logged sets only after an API response. */
 export function SetRow(props: LoggedProps | DraftProps) {
   if (props.completed) {
     return (

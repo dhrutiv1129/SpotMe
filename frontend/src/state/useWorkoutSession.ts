@@ -6,7 +6,7 @@ export interface WorkoutSessionSource {
   loadWorkout: (sessionId: string, exerciseId?: string) => Promise<WorkoutView>;
 }
 
-/** Loads and updates the current workout for Train. */
+/** Keeps the current workout response available to the Train screens. */
 export function useWorkoutSession(source: WorkoutSessionSource) {
   const [workout, setWorkout] = useState<WorkoutView | null>(null);
   const currentWorkout = useRef<WorkoutView | null>(null);

@@ -42,7 +42,7 @@ export function validateSetInput(weight: string, reps: string) {
   };
 }
 
-/** Checks input locally; the caller submits it and supplies confirmed results. */
+/** Checks the input before passing it to the save action. */
 export function WorkoutForm({
   exercise, weight, reps, disabled, busy, error,
   onWeightChange, onRepsChange, onEditSet, onSwap, onGuide, onSubmit,

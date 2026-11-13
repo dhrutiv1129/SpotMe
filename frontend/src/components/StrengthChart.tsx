@@ -20,7 +20,7 @@ interface Props {
 const plotHeight = 112;
 const inset = 6;
 
-/** Plots the strength values returned by the backend. */
+/** Shows a chart of strength results from the backend. */
 export function StrengthChart({points, minimum, maximum, ticks, dateLabels, accessibilityLabel}: Props) {
   const [width, setWidth] = useState(0);
   const range = maximum - minimum;

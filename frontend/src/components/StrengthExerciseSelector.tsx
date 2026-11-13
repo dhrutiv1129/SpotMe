@@ -15,7 +15,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** Finds exercises and opens strength results for the selected exercise. */
+/** Lets users find an exercise and see its strength results. */
 export function StrengthExerciseSelector({selectedExerciseId, searchExercises, onSelect, onClose}: Props) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly StrengthExerciseOption[]>([]);

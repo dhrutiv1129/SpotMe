@@ -21,10 +21,10 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
     .getByRole("button", { name: "Create account", exact: true })
     .click();
   await expect(
-    page.getByText("Make today count.", { exact: true }),
+    page.getByRole("heading", { name: /You’ve got this/ }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Start a workout", exact: true })
+    .getByRole("button", { name: "Let’s get moving  →", exact: true })
     .click();
   await page.getByRole("button", { name: "Leg press", exact: true }).click();
   await page
@@ -40,7 +40,7 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
   await page.getByRole("button", { name: /Log set 1/ }).click();
   await page.reload();
   await page
-    .getByRole("button", { name: "Continue workout", exact: true })
+    .getByRole("button", { name: "Continue workout  →", exact: true })
     .click();
   await expect(
     page.getByText("Goblet squat · 1 sets", { exact: true }),
@@ -67,13 +67,15 @@ test("sign in, replace unavailable machine, save workout, reload, and see progre
     path: "test-results/beta-progress.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Back to home", exact: true }).click();
+  await page.getByRole("tab", { name: "Today", exact: true }).click();
+  await page.getByRole("tab", { name: "You", exact: true }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page
     .getByLabel("Password", { exact: true })
     .fill("correct horse battery staple");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("tab", { name: "You", exact: true }).click();
   await page
     .getByRole("button", { name: "Workout history", exact: true })
     .click();
@@ -100,7 +102,7 @@ test("a lost save response survives reload and retries without duplication", asy
     .getByRole("button", { name: "Create account", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Start a workout", exact: true })
+    .getByRole("button", { name: "Let’s get moving  →", exact: true })
     .click();
   await page.getByRole("button", { name: "Goblet squat", exact: true }).click();
   await page.getByLabel("Weight (lb)", { exact: true }).fill("30");
@@ -138,4 +140,62 @@ test("a lost save response survives reload and retries without duplication", asy
   await expect(
     page.getByRole("button", { name: /View workout \d+/ }),
   ).toHaveCount(1);
+});
+
+test("navigate the redesigned dashboard, gym setup and consistency calendar", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "New here? Create an account", exact: true })
+    .click();
+  await page
+    .getByLabel("Email", { exact: true })
+    .fill(`design-${Date.now()}@example.com`);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("correct horse battery staple");
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: /You’ve got this/ }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `test-results/dashboard-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await page.getByRole("tab", { name: "You", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Your gym setup", exact: true })
+    .click();
+  await expect(
+    page.getByText("What’s at your gym?", { exact: true }),
+  ).toBeVisible();
+  const equipment = page.getByRole("checkbox").first();
+  const checked = await equipment.getAttribute("aria-checked");
+  await equipment.click();
+  await expect(equipment).toHaveAttribute(
+    "aria-checked",
+    checked === "true" ? "false" : "true",
+  );
+  await page.getByLabel("Search equipment").fill("nothing-matches");
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page.getByLabel("Search equipment").fill("");
+  await page
+    .getByRole("button", { name: "✓  Use gym setup", exact: true })
+    .click();
+  await page.getByRole("tab", { name: "Progress", exact: true }).click();
+  await page.getByText("Consistency", { exact: true }).click();
+  await expect(
+    page.getByText("Every visit counts.", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Previous month", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Next month", exact: true }).click();
+  await page.screenshot({
+    path: `test-results/calendar-${test.info().project.name}.png`,
+    fullPage: true,
+  });
 });

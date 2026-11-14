@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -25,9 +26,15 @@ import type {
 } from "./src/beta/api";
 import { loadDraft, newDraft, payload, persistDraft } from "./src/beta/draft";
 import type { Draft } from "./src/beta/draft";
+import { AppTabBar } from "./src/components/AppTabBar";
+import { CalendarView } from "./src/components/CalendarView";
+import { StrengthChart } from "./src/components/StrengthChart";
 import { colors } from "./src/theme";
 
 type Screen =
+  | "consistency"
+  | "equipment"
+  | "profile"
   | "home"
   | "workout"
   | "review"
@@ -68,6 +75,10 @@ export default function App() {
     "bodyweight",
     "dumbbell",
   ]);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    new Date().toISOString().slice(0, 7),
+  );
+  const [equipmentQuery, setEquipmentQuery] = useState("");
   const [beginner, setBeginner] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -106,6 +117,7 @@ export default function App() {
       loadDraft(account.id),
     ]);
     setCatalog(exercises);
+    setHistory(await api<Workout[]>("/workouts"));
     setDraft(saved);
     draftRef.current = saved;
     setSelected(saved.exercises[0]?.exerciseId ?? null);
@@ -219,6 +231,10 @@ export default function App() {
       }
       await updateDraft(newDraft());
       setDetail(saved);
+      setHistory((previous) => [
+        saved,
+        ...previous.filter((w) => w.id !== saved.id),
+      ]);
       setSelected(null);
       navigate("detail");
       setNotice("Workout saved.");
@@ -276,7 +292,11 @@ export default function App() {
           contentContainerStyle={styles.auth}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.brand}>SPOTME / PRIVATE BETA</Text>
+          <Text style={styles.brand}>◈ SpotMe</Text>
+          <View style={styles.authAccent}>
+            <Text style={{ fontSize: 44, color: colors.green }}>↗</Text>
+            <Text style={styles.link}>A LITTLE STRONGER, EVERY DAY</Text>
+          </View>
           <Text accessibilityRole="header" style={styles.title}>
             Show up. Get stronger.
           </Text>
@@ -338,8 +358,8 @@ export default function App() {
             />
           )}
           <Text style={styles.small}>
-            Use one weight unit throughout: pounds (lb). Native sessions last up
-            to 7 days; browser sessions stay in this tab.
+            Your next chapter starts with one session. All training weights in
+            pounds (lb).
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -367,26 +387,210 @@ export default function App() {
     );
 
   let content: React.ReactNode;
+  const totalSets = draft.exercises.reduce((n, e) => n + e.sets.length, 0);
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
   if (screen === "home")
     content = (
       <>
+        <Text style={styles.eyebrow}>{todayLabel.toUpperCase()}</Text>
         <Text accessibilityRole="header" style={styles.title}>
-          Make today count.
+          Hey {user.email.split("@")[0]}. You’ve got this.
         </Text>
-        <Text style={styles.body}>{user.email}</Text>
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>Your next rep starts here.</Text>
-          <Text style={styles.heroText}>
-            A simple log. A clearer view of your progress. A backup plan for
-            busy equipment.
-          </Text>
-          <Button
-            label={
-              draft.exercises.length ? "Continue workout" : "Start a workout"
-            }
-            onPress={() => navigate(draft.pending ? "review" : "workout")}
+        <Text style={styles.body}>
+          A little stronger, one session at a time.
+        </Text>
+        <View style={[styles.hero, { padding: 0, overflow: "hidden" }]}>
+          <Image
+            source={require("./src/assets/workout-hero.jpg")}
+            style={{ height: 180, width: "100%", opacity: 0.72 }}
+            accessibilityLabel="Strength training in a gym"
           />
+          <View style={{ padding: 20, gap: 14 }}>
+            <Text style={styles.heroEyebrow}>YOUR NEXT SESSION</Text>
+            <Text style={styles.heroTitle}>
+              {draft.exercises.length
+                ? "Your workout, your pace."
+                : "Build your strength."}
+            </Text>
+            <Text style={styles.heroText}>
+              {draft.exercises.length
+                ? `${draft.exercises.length} exercises · ${totalSets} sets logged`
+                : "Choose your exercises · Move at your pace"}
+            </Text>
+            {draft.exercises.slice(0, 4).map((e, i) => (
+              <View key={e.exerciseId} style={styles.between}>
+                <Text style={styles.heroText}>
+                  {String(i + 1).padStart(2, "0")} {exerciseName(e.exerciseId)}
+                </Text>
+                <Text style={styles.heroText}>{e.sets.length} sets</Text>
+              </View>
+            ))}
+            <Button
+              label={
+                draft.exercises.length
+                  ? "Continue workout  →"
+                  : "Let’s get moving  →"
+              }
+              onPress={() => navigate(draft.pending ? "review" : "workout")}
+            />
+          </View>
         </View>
+        <View style={styles.between}>
+          <Text style={styles.heading}>Showing up adds up</Text>
+          <Pressable
+            onPress={() => {
+              void showHistory();
+            }}
+          >
+            <Text style={styles.link}>View history →</Text>
+          </Pressable>
+        </View>
+        <View style={styles.softCard}>
+          <Text style={styles.metric}>{history.length}</Text>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={styles.heading}>Every visit counts.</Text>
+            <Text style={styles.small}>
+              {history.length
+                ? "Look how far you’ve come. Keep showing up."
+                : "Your first session is a fresh start."}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.between}>
+          <Text style={styles.heading}>A win worth noticing</Text>
+          <Pressable
+            onPress={() => {
+              if (catalog[0]) void showProgress(catalog[0].id);
+            }}
+          >
+            <Text style={styles.link}>See progress →</Text>
+          </Pressable>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.heading}>Small steps. Real strength.</Text>
+          <Text style={styles.body}>
+            Your logged sessions tell your story. See your strength grow, one
+            workout at a time.
+          </Text>
+        </View>
+        <Pressable
+          style={styles.softCard}
+          onPress={() => navigate("equipment")}
+        >
+          <Text style={styles.heading}>Your gym, set up for you</Text>
+          <Text style={styles.link}>Edit equipment →</Text>
+        </Pressable>
+      </>
+    );
+  else if (screen === "consistency") {
+    const [year, month] = calendarMonth.split("-").map(Number);
+    const start = new Date(year, month - 1, 1);
+    const offset = (start.getDay() + 6) % 7;
+    const dayCount = new Date(year, month, 0).getDate();
+    const dateKey = (day: number) =>
+      `${calendarMonth}-${String(day).padStart(2, "0")}`;
+    const monthKey = (offset: number) => {
+      const d = new Date(year, month - 1 + offset, 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+    const weeks = Array.from(
+      { length: Math.ceil((offset + dayCount) / 7) },
+      (_, w) => ({
+        id: String(w),
+        days: Array.from({ length: 7 }, (_, d) => {
+          const day = w * 7 + d - offset + 1;
+          if (day < 1 || day > dayCount) return null;
+          const date = dateKey(day);
+          const sessions = history.filter((s) => s.date === date);
+          return {
+            date,
+            dayLabel: String(day),
+            accessibilityLabel: `${date}, ${sessions.length} workouts`,
+            activity: (sessions.length > 1
+              ? "high"
+              : sessions.length
+                ? "medium"
+                : "none") as "high" | "medium" | "none",
+            isToday: date === newDraft().date,
+            isFuture: date > newDraft().date,
+            sessionIds: sessions.map((s) => String(s.id)),
+          };
+        }),
+      }),
+    );
+    const monthly = history.filter((w) => w.date.startsWith(calendarMonth));
+    content = (
+      <>
+        <Text style={styles.title}>Every visit counts.</Text>
+        <View style={styles.tabs}>
+          <Pressable
+            style={styles.activeSegment}
+            onPress={() => {
+              if (catalog[0]) void showProgress(catalog[0].id);
+            }}
+          >
+            <Text style={styles.small}>Strength</Text>
+          </Pressable>
+          <View style={styles.activeSegment}>
+            <Text style={styles.link}>Consistency</Text>
+          </View>
+        </View>
+        <View style={styles.softCard}>
+          <Text style={styles.metric}>{monthly.length}</Text>
+          <Text style={styles.body}>workouts this month</Text>
+        </View>
+        <CalendarView
+          calendar={{
+            monthLabel: start.toLocaleDateString(undefined, {
+              month: "long",
+              year: "numeric",
+            }),
+            previousMonthId: monthKey(-1),
+            nextMonthId: monthKey(1),
+            weeks,
+          }}
+          onChangeMonth={setCalendarMonth}
+          onViewDay={(date, ids) => {
+            if (ids.length === 1)
+              void run(async () => {
+                setDetail(await api<Workout>(`/workouts/${ids[0]}`));
+                navigate("detail");
+              });
+            else if (ids.length > 1) {
+              setNotice(`Sessions on ${date}`);
+              navigate("history");
+            } else setNotice(`No saved workouts on ${date}.`);
+          }}
+        />
+        <Button
+          label="All workout history"
+          variant="secondary"
+          onPress={() => {
+            void showHistory();
+          }}
+        />
+      </>
+    );
+  } else if (screen === "profile")
+    content = (
+      <>
+        <Text style={styles.eyebrow}>YOUR SPACE</Text>
+        <Text style={styles.title}>Keep showing up.</Text>
+        <View style={styles.card}>
+          <Text style={styles.heading}>{user.email}</Text>
+          <Text style={styles.body}>
+            Your training. Your progress. Your pace.
+          </Text>
+        </View>
+        <Button
+          label="Your gym setup"
+          variant="secondary"
+          onPress={() => navigate("equipment")}
+        />
         <Button
           label="Workout history"
           variant="secondary"
@@ -394,29 +598,89 @@ export default function App() {
             void showHistory();
           }}
         />
-        <Text style={styles.heading}>See your progress</Text>
-        <Text style={styles.body}>
-          Choose an exercise to see your logged sessions and personal records.
-        </Text>
-        <View style={styles.wrap}>
-          {catalog.map((e) => (
-            <Chip
-              key={e.id}
-              label={e.name}
-              onPress={() => {
-                void showProgress(e.id);
-              }}
-            />
-          ))}
+        <View style={styles.softCard}>
+          <Text style={styles.body}>
+            All workout weights are recorded in pounds (lb).
+          </Text>
         </View>
         <Button
           label="Sign out"
           variant="text"
-          disabled={busy}
           onPress={() => {
             void logout();
           }}
         />
+      </>
+    );
+  else if (screen === "equipment")
+    content = (
+      <>
+        <Text style={styles.title}>What’s at your gym?</Text>
+        <Text style={styles.body}>
+          Choose the equipment your gym has. We’ll use it to find swaps that
+          fit.
+        </Text>
+        <View style={styles.softCard}>
+          <View style={{ gap: 6, flex: 1 }}>
+            <Text style={styles.heading}>
+              Available doesn’t mean unoccupied.
+            </Text>
+            <Text style={styles.small}>
+              This is your gym’s inventory, not a live busy indicator. You can
+              swap when a machine is in use.
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.heading}>
+          Currently selected · {available.length}
+        </Text>
+        <View style={styles.wrap}>
+          {available.map((e) => (
+            <Chip
+              key={e}
+              label={`✓ ${e}`}
+              selected
+              onPress={() => setAvailable(available.filter((v) => v !== e))}
+            />
+          ))}
+        </View>
+        <TextInput
+          accessibilityLabel="Search equipment"
+          placeholder="Search equipment"
+          value={equipmentQuery}
+          onChangeText={setEquipmentQuery}
+          style={styles.input}
+        />
+        {equipment
+          .filter((e) => e.toLowerCase().includes(equipmentQuery.toLowerCase()))
+          .map((e) => (
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: available.includes(e) }}
+              aria-checked={available.includes(e)}
+              key={e}
+              onPress={() =>
+                setAvailable(
+                  available.includes(e)
+                    ? available.filter((v) => v !== e)
+                    : [...available, e],
+                )
+              }
+              style={[
+                styles.equipmentRow,
+                available.includes(e) && { backgroundColor: colors.pale },
+              ]}
+            >
+              <Text style={styles.heading}>{e.replace(/_/g, " ")}</Text>
+              <Text style={styles.link}>
+                {available.includes(e) ? "✓" : "+"}
+              </Text>
+            </Pressable>
+          ))}
+        <Text style={styles.small}>
+          Your selections apply to swaps during this session.
+        </Text>
+        <Button label="✓  Use gym setup" onPress={() => navigate("workout")} />
       </>
     );
   else if (screen === "workout")
@@ -425,10 +689,25 @@ export default function App() {
         <Text accessibilityRole="header" style={styles.title}>
           Your workout
         </Text>
-        <Text style={styles.body}>
-          Date: {draft.date} · All weights in lb. Logged sets are saved on this
-          device until you finish.
-        </Text>
+        <View style={styles.hero}>
+          <Text style={styles.heroEyebrow}>IN PROGRESS</Text>
+          <Text style={styles.heroTitle}>One rep at a time.</Text>
+          <View style={styles.track}>
+            <View
+              style={[
+                styles.bar,
+                {
+                  width: `${Math.min(100, (totalSets / Math.max(1, draft.exercises.length * 3)) * 100)}%`,
+                  backgroundColor: colors.lime,
+                },
+              ]}
+            />
+          </View>
+          <Text style={styles.heroText}>
+            {totalSets} sets logged · {draft.exercises.length} exercises ·{" "}
+            {draft.date}
+          </Text>
+        </View>
         <Text style={styles.heading}>Choose an exercise</Text>
         <View style={styles.wrap}>
           {catalog.map((e) => (
@@ -554,26 +833,15 @@ export default function App() {
                 />
               </View>
             )}
-            <Text style={styles.heading}>Machine unavailable?</Text>
-            <Text style={styles.body}>
-              Select only equipment you can use right now.
-            </Text>
-            <View style={styles.wrap}>
-              {equipment.map((e) => (
-                <Chip
-                  key={e}
-                  label={e}
-                  selected={available.includes(e)}
-                  onPress={() =>
-                    setAvailable(
-                      available.includes(e)
-                        ? available.filter((v) => v !== e)
-                        : [...available, e],
-                    )
-                  }
-                />
-              ))}
+            <View style={styles.between}>
+              <Text style={styles.heading}>Equipment busy?</Text>
+              <Pressable onPress={() => navigate("equipment")}>
+                <Text style={styles.link}>Gym setup →</Text>
+              </Pressable>
             </View>
+            <Text style={styles.body}>
+              Keep your flow. Find a swap with equipment at your gym.
+            </Text>
             <Chip
               label="Beginner alternatives only"
               selected={beginner}
@@ -616,10 +884,19 @@ export default function App() {
         {payload(draft).exercises.map((e) => (
           <View key={e.exerciseId} style={styles.card}>
             <Text style={styles.heading}>{exerciseName(e.exerciseId)}</Text>
+            <View style={styles.between}>
+              <Text style={styles.small}>SET</Text>
+              <Text style={styles.small}>LB × REPS</Text>
+              <Text style={styles.small}>STATUS</Text>
+            </View>
             {e.sets.map((s, i) => (
-              <Text key={i} style={styles.body}>
-                Set {i + 1}: {s.reps} reps × {number(s.weight)} lb
-              </Text>
+              <View key={i} style={styles.setLine}>
+                <Text style={styles.body}>{i + 1}</Text>
+                <Text style={styles.body}>
+                  {number(s.weight)} × {s.reps}
+                </Text>
+                <Text style={styles.link}>✓ Completed</Text>
+              </View>
             ))}
           </View>
         ))}
@@ -652,6 +929,11 @@ export default function App() {
         <Text accessibilityRole="header" style={styles.title}>
           Every session, saved.
         </Text>
+        <Text style={styles.body}>Your workout history, newest first.</Text>
+        <View style={styles.softCard}>
+          <Text style={styles.metric}>{history.length}</Text>
+          <Text style={styles.body}>completed sessions</Text>
+        </View>
         {!history.length && (
           <Text style={styles.body}>
             No workouts yet. Your first saved workout will appear here.
@@ -684,16 +966,36 @@ export default function App() {
         <Text accessibilityRole="header" style={styles.title}>
           Workout saved
         </Text>
-        <Text style={styles.body}>
-          {detail.date} · {number(volume(detail))} lb volume
+        <Text style={styles.eyebrow}>{detail.date}</Text>
+        <View style={styles.hero}>
+          <Text style={styles.heroEyebrow}>✓ SAVED · COMPLETED</Text>
+          <Text style={styles.heroTitle}>{number(volume(detail))} lb</Text>
+          <Text style={styles.heroText}>
+            total training volume · {detail.exercises.length} exercises ·{" "}
+            {detail.exercises.reduce((n, e) => n + e.sets.length, 0)} completed
+            sets
+          </Text>
+        </View>
+        <Text style={styles.heading}>What you actually did</Text>
+        <Text style={styles.small}>
+          Your completed sets, saved to your history.
         </Text>
         {detail.exercises.map((e) => (
           <View key={e.exerciseId} style={styles.card}>
             <Text style={styles.heading}>{exerciseName(e.exerciseId)}</Text>
+            <View style={styles.between}>
+              <Text style={styles.small}>SET</Text>
+              <Text style={styles.small}>LB × REPS</Text>
+              <Text style={styles.small}>STATUS</Text>
+            </View>
             {e.sets.map((s, i) => (
-              <Text key={i} style={styles.body}>
-                Set {i + 1}: {s.reps} reps × {number(s.weight)} lb
-              </Text>
+              <View key={i} style={styles.setLine}>
+                <Text style={styles.body}>{i + 1}</Text>
+                <Text style={styles.body}>
+                  {number(s.weight)} × {s.reps}
+                </Text>
+                <Text style={styles.link}>✓ Completed</Text>
+              </View>
             ))}
             <Button
               label={`See progress for ${exerciseName(e.exerciseId)}`}
@@ -720,9 +1022,69 @@ export default function App() {
     content = (
       <>
         <Text accessibilityRole="header" style={styles.title}>
-          {exerciseName(progress.exerciseId)}
+          Small steps. Real strength.
         </Text>
-        <Text style={styles.heading}>Your progress</Text>
+        <Text style={styles.heading}>{exerciseName(progress.exerciseId)}</Text>
+        <Text style={styles.body}>Your strength, session by session.</Text>
+        <View style={styles.tabs}>
+          <View style={styles.activeSegment}>
+            <Text style={styles.link}>Strength</Text>
+          </View>
+          <Pressable
+            style={styles.activeSegment}
+            onPress={() => {
+              void run(async () => {
+                setHistory(await api<Workout[]>("/workouts"));
+                navigate("consistency");
+              });
+            }}
+          >
+            <Text style={styles.small}>Consistency</Text>
+          </Pressable>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }}
+        >
+          {catalog.map((e) => (
+            <Chip
+              key={e.id}
+              label={e.name}
+              selected={e.id === progress.exerciseId}
+              onPress={() => {
+                void showProgress(e.id);
+              }}
+            />
+          ))}
+        </ScrollView>
+        {progress.points.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.small}>Estimated one-rep max</Text>
+            <Text style={styles.metric}>
+              {number(progress.records?.estimatedOneRepMax?.value)}{" "}
+              <Text style={styles.small}>lb</Text>
+            </Text>
+            <StrengthChart
+              points={progress.points.map((p) => ({
+                id: String(p.workoutId),
+                dateLabel: p.date,
+                value: Number(p.estimatedOneRepMax || 0),
+              }))}
+              minimum={0}
+              maximum={max * 1.1}
+              ticks={[0, max / 2, max].map((v) => ({
+                id: String(v),
+                value: v,
+                label: number(v),
+              }))}
+              dateLabels={progress.points
+                .filter((_, i) => i === 0 || i === progress.points.length - 1)
+                .map((p) => ({ id: String(p.workoutId), label: p.date }))}
+              accessibilityLabel="Estimated one-rep max over your saved sessions"
+            />
+          </View>
+        )}
         {!progress.points.length && (
           <Text style={styles.body}>
             No logged sets yet. Save a workout with this exercise to start
@@ -730,42 +1092,41 @@ export default function App() {
           </Text>
         )}
         {progress.records && (
-          <View style={styles.hero}>
-            <Text style={styles.heroTitle}>Personal records</Text>
-            <Text style={styles.heroText}>
-              Heaviest weight: {number(progress.records.maxWeight.value)} lb
-            </Text>
-            <Text style={styles.heroText}>
-              Best estimated 1RM:{" "}
-              {number(progress.records.estimatedOneRepMax?.value)} lb
-            </Text>
-            <Text style={styles.heroText}>
-              Best session volume:{" "}
-              {number(progress.records.maxWorkoutVolume.value)} lb
-            </Text>
+          <View style={styles.softCard}>
+            <View style={{ gap: 10, flex: 1 }}>
+              <Text style={styles.heading}>A win worth noticing</Text>
+              <Text style={styles.body}>
+                Heaviest weight: {number(progress.records.maxWeight.value)} lb
+              </Text>
+              <Text style={styles.body}>
+                Best estimated 1RM:{" "}
+                {number(progress.records.estimatedOneRepMax?.value)} lb
+              </Text>
+              <Text style={styles.body}>
+                Best session volume:{" "}
+                {number(progress.records.maxWorkoutVolume.value)} lb
+              </Text>
+            </View>
           </View>
         )}
         <Text style={styles.body}>
           Estimated one-rep max over time. Zero external load has no estimate.
         </Text>
+        <View style={styles.between}>
+          <Text style={styles.heading}>Recent sessions</Text>
+          <Pressable
+            onPress={() => {
+              void showHistory();
+            }}
+          >
+            <Text style={styles.link}>All workouts →</Text>
+          </Pressable>
+        </View>
         {progress.points.map((p) => (
           <View key={p.workoutId} style={styles.card}>
             <Text style={styles.heading}>
               {p.date} · Workout {p.workoutId}
             </Text>
-            <View
-              accessibilityLabel={`Estimated one rep max ${number(p.estimatedOneRepMax)} pounds`}
-              style={styles.track}
-            >
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    width: `${Math.max(0, (Number(p.estimatedOneRepMax || 0) / max) * 100)}%`,
-                  },
-                ]}
-              />
-            </View>
             <Text style={styles.body}>
               Estimated 1RM: {number(p.estimatedOneRepMax)} lb · Volume:{" "}
               {number(p.volume)} lb
@@ -850,9 +1211,17 @@ export default function App() {
           onPress={() => navigate("home")}
           disabled={busy}
         >
-          <Text style={styles.brand}>SPOTME</Text>
+          <Text style={styles.brand}>◈ SpotMe</Text>
         </Pressable>
-        <Text style={styles.small}>PRIVATE BETA · LB</Text>
+        <Pressable
+          accessibilityLabel="Your profile"
+          onPress={() => navigate("profile")}
+          style={styles.avatar}
+        >
+          <Text style={styles.link}>
+            {user.email.slice(0, 2).toUpperCase()}
+          </Text>
+        </Pressable>
       </View>
       {specialized ? (
         <View style={styles.flex}>
@@ -864,14 +1233,6 @@ export default function App() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {screen !== "home" && (
-            <Button
-              label="Back to home"
-              variant="text"
-              disabled={busy}
-              onPress={() => navigate("home")}
-            />
-          )}
           {!!notice && (
             <Text accessibilityRole="alert" style={styles.notice}>
               {notice}
@@ -882,6 +1243,27 @@ export default function App() {
           {content}
         </ScrollView>
       )}
+      <AppTabBar
+        active={
+          screen === "home"
+            ? "Today"
+            : screen === "profile"
+              ? "You"
+              : ["progress", "history", "detail", "consistency"].includes(
+                    screen,
+                  )
+                ? "Progress"
+                : "Train"
+        }
+        disabled={busy}
+        onSelect={(tab) => {
+          if (tab === "Today") navigate("home");
+          else if (tab === "You") navigate("profile");
+          else if (tab === "Train")
+            navigate(draft.pending ? "review" : "workout");
+          else if (catalog[0]) void showProgress(catalog[0].id);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -914,9 +1296,87 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === "ios" ? 52 : 24,
+    paddingTop: Platform.OS === "ios" ? 52 : 12,
+    width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0 0 80px rgba(28,48,37,0.08)" }
+      : {}),
   },
   flex: { flex: 1 },
+  setLine: {
+    backgroundColor: colors.pale,
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  between: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  eyebrow: {
+    fontSize: 10,
+    letterSpacing: 1.3,
+    color: colors.green,
+    marginTop: 10,
+  },
+  heroEyebrow: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.lime,
+    fontWeight: "700",
+  },
+  link: { fontSize: 12, color: colors.green, fontWeight: "600" },
+  metric: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: colors.ink,
+    letterSpacing: -1,
+  },
+  softCard: {
+    backgroundColor: colors.pale,
+    padding: 18,
+    borderRadius: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+  },
+  equipmentRow: {
+    padding: 17,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  tabs: {
+    backgroundColor: colors.soft,
+    padding: 4,
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 4,
+  },
+  activeSegment: {
+    flex: 1,
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 9,
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 20,
+    backgroundColor: colors.pale,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  authAccent: {backgroundColor: colors.pale, borderRadius: 22, padding: 24, gap: 18, marginTop: 20},
   center: {
     flex: 1,
     justifyContent: "center",
@@ -934,11 +1394,11 @@ const styles = StyleSheet.create({
   },
   content: {
     width: "100%",
-    maxWidth: 760,
+    maxWidth: 440,
     alignSelf: "center",
-    padding: 24,
-    paddingBottom: 64,
-    gap: 20,
+    padding: 20,
+    paddingBottom: 32,
+    gap: 18,
   },
   nav: {
     paddingHorizontal: 24,
@@ -950,18 +1410,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   brand: {
-    fontSize: 16,
+    fontSize: 21,
     fontWeight: "800",
-    letterSpacing: 2,
+    letterSpacing: -0.5,
     color: colors.green,
   },
   title: {
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: "700",
     letterSpacing: -1,
     color: colors.ink,
   },
-  heading: { fontSize: 19, fontWeight: "700", color: colors.ink },
+  heading: { fontSize: 16, fontWeight: "700", color: colors.ink },
   body: { fontSize: 15, lineHeight: 23, color: colors.muted },
   small: { fontSize: 12, lineHeight: 18, color: colors.muted },
   input: {
@@ -982,25 +1442,25 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 28, fontWeight: "700", color: colors.surface },
   heroText: { fontSize: 15, lineHeight: 23, color: colors.pale },
   card: {
-    padding: 20,
+    padding: 16,
     borderRadius: 18,
     backgroundColor: colors.surface,
     gap: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   chip: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  chipSelected: { backgroundColor: colors.green, borderColor: colors.green },
+  chipSelected: { backgroundColor: colors.pale, borderColor: colors.green },
   chipText: { fontSize: 14, color: colors.ink },
-  chipTextSelected: { color: colors.surface },
+  chipTextSelected: { color: colors.green },
   error: {
     color: colors.danger,
     backgroundColor: colors.dangerSoft,

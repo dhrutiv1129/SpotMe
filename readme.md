@@ -126,5 +126,21 @@ The current catalog contains twelve exercises, and all logged weights use pounds
 Editing and deleting **saved** workouts are required for the first beta but are
 not implemented yet. Consistency tracking (calendar, heatmap, and streaks) is
 deferred until after the first beta; its existing services and UI components are
-not connected to the beta app. Weekly-goal persistence, video form analysis,
-password reset, and email verification are also unavailable.
+not connected to the beta app. Weekly-goal persistence, password reset, and email
+verification are also unavailable.
+
+## Experimental Form Coach
+
+Browser users can open **You → Form Analysis · Bodyweight Squat** (or **Review
+video form** while logging Bodyweight squat). Select a side-view video up to
+30 seconds and 50 MB, preview it, confirm the recording setup, and explicitly
+select **Analyze Video**. MediaPipe runs in the browser; videos are never uploaded
+or permanently stored. Results show measured knee/hip angles, detected complete
+reps, tracking quality, and neutral movement observations with a visible
+educational disclaimer.
+
+This MVP supports only side-view, unweighted bodyweight squats. It uses experimental
+thresholds, requires model/runtime downloads, and has not been validated against
+manually labeled exercise videos. Native clients display a browser-only notice.
+See [Form Coach testing and limitations](docs/FORM_COACH_TESTING.md) for setup,
+manual validation, privacy details, and automated checks (`npm run test:form`).

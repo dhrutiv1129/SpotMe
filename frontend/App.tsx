@@ -15,6 +15,7 @@ import {
 import { Button, NumberField } from "./src/components/WorkoutControls";
 import { WorkoutForm, validateSetInput } from "./src/components/WorkoutForm";
 import { AlternativesModel } from "./src/components/AlternativesModel";
+import { FormCoachScreen } from "./src/screens/FormCoachScreen";
 import { ExerciseGuideScreen } from "./src/screens/ExerciseGuideScreen";
 import { api, ApiError, restoreToken, storeToken } from "./src/beta/api";
 import type {
@@ -32,6 +33,7 @@ import { StrengthChart } from "./src/components/StrengthChart";
 import { colors } from "./src/theme";
 
 type Screen =
+  | "form-coach"
   | "consistency"
   | "equipment"
   | "profile"
@@ -57,6 +59,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
+  const [formCoachBack, setFormCoachBack] = useState<Screen>("profile");
   const [screen, setScreen] = useState<Screen>("home");
   const [catalog, setCatalog] = useState<Exercise[]>([]);
   const [draft, setDraft] = useState<Draft>(newDraft);
@@ -587,6 +590,14 @@ export default function App() {
           </Text>
         </View>
         <Button
+          label="Form Analysis · Bodyweight Squat"
+          variant="secondary"
+          onPress={() => {
+            setFormCoachBack("profile");
+            navigate("form-coach");
+          }}
+        />
+        <Button
           label="Your gym setup"
           variant="secondary"
           onPress={() => navigate("equipment")}
@@ -768,6 +779,16 @@ export default function App() {
                 }));
               }}
             />
+            {exercise.name.toLowerCase() === "bodyweight squat" && (
+              <Button
+                label="Review video form"
+                variant="secondary"
+                onPress={() => {
+                  setFormCoachBack("workout");
+                  navigate("form-coach");
+                }}
+              />
+            )}
             {editing !== null && (
               <View style={styles.card}>
                 <Text style={styles.heading}>Edit set {editing + 1}</Text>
@@ -1141,7 +1162,9 @@ export default function App() {
   } else content = null;
 
   const specialized =
-    screen === "alternatives" ? (
+    screen === "form-coach" ? (
+      <FormCoachScreen onBack={() => navigate(formCoachBack)} />
+    ) : screen === "alternatives" ? (
       <AlternativesModel
         originalExerciseName={exercise?.name || ""}
         targetLabel={exercise?.muscleGroup || ""}
@@ -1376,7 +1399,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  authAccent: {backgroundColor: colors.pale, borderRadius: 22, padding: 24, gap: 18, marginTop: 20},
+  authAccent: {
+    backgroundColor: colors.pale,
+    borderRadius: 22,
+    padding: 24,
+    gap: 18,
+    marginTop: 20,
+  },
   center: {
     flex: 1,
     justifyContent: "center",

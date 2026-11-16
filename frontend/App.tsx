@@ -29,9 +29,12 @@ import { colors } from "./src/theme";
 import { MainTabs } from "./src/navigation/MainTabs";
 import type { MainTab } from "./src/navigation/MainTabs";
 import { SavedWorkoutPlansScreen } from "./src/screens/SavedWorkoutPlansScreen";
+import { CreateWorkoutScreen, validTarget } from "./src/screens/CreateWorkoutScreen";
+import type { WorkoutBuilderValue } from "./src/screens/CreateWorkoutScreen";
 
 type Screen =
   | "home"
+  | "create"
   | "workout"
   | "review"
   | "alternatives"
@@ -86,6 +89,7 @@ export default function App() {
   const [trainLoading, setTrainLoading] = useState(true);
   const [trainError, setTrainError] = useState("");
   const [trainReload, setTrainReload] = useState(0);
+  const [creation, setCreation] = useState<WorkoutBuilderValue | null>(null);
 
   async function run(action: () => Promise<void>) {
     if (busyRef.current) return;
@@ -114,6 +118,7 @@ export default function App() {
     setTrainWorkouts([]);
     setTrainLoading(true);
     setTrainError("");
+    setCreation(null);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
       loadDraft(account.id),
@@ -202,7 +207,7 @@ export default function App() {
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
     if (next === "home") setActiveTab("train");
-    else if (["workout", "review", "alternatives", "guide"].includes(next))
+    else if (["create", "workout", "review", "alternatives", "guide"].includes(next))
       setActiveTab("train");
     else if (next === "progress" || next === "progressHome") setActiveTab("progress");
     else if (next === "profile") setActiveTab("you");
@@ -215,7 +220,7 @@ export default function App() {
     if (busyRef.current || tab === activeTab) return;
     setActiveTab(tab);
     navigate(
-      tab === "train" ? (draftRef.current.pending ? "review" : "home") :
+      tab === "train" ? (draftRef.current.pending ? "review" : creation ? "create" : "home") :
       tab === "progress" ? "progressHome" : "profile",
     );
   }
@@ -229,12 +234,13 @@ export default function App() {
     setSelected(id);
     setEditing(null);
     setWeight("");
-    setReps("");
+    const target = draftRef.current.plan?.targets.find(item => item.exerciseId === id);
+    setReps(target ? String(target.reps) : "");
   }
   const trainTemplate = trainWorkouts.find(workout => workout.exercises.some(item => item.sets.length > 0));
   const templateExercises = trainTemplate?.exercises.filter(item => item.sets.length > 0) || [];
   const templateDate = trainTemplate ? new Date(`${trainTemplate.date}T12:00:00`).toLocaleDateString(undefined, {day: "numeric", month: "short"}) : "";
-  const savedWorkoutCard = trainTemplate ? {
+  const historyWorkoutCard = trainTemplate ? {
     id: String(trainTemplate.id),
     name: `Workout · ${templateDate}`,
     summaryLabel: `${templateExercises.length} exercises · ${templateExercises.reduce((sum, item) => sum + item.sets.length, 0)} sets`,
@@ -246,9 +252,57 @@ export default function App() {
     })),
     remainingExercisesLabel: templateExercises.length > 3 ? `+ ${templateExercises.slice(3).map(item => exerciseName(item.exerciseId)).join(", ")}` : undefined,
   } : null;
+  const plannedWorkoutCard = draft.plan?.ready ? {
+    id: draft.key,
+    name: draft.plan.name,
+    summaryLabel: `${draft.plan.targets.length} exercises · ${draft.plan.targets.reduce((sum, item) => sum + item.sets, 0)} target sets · On this device`,
+    exercisePreview: draft.plan.targets.slice(0, 3).map((item, index) => ({
+      id: String(item.exerciseId), orderLabel: String(index + 1).padStart(2, "0"),
+      name: exerciseName(item.exerciseId), targetLabel: `${item.sets} × ${item.reps}`,
+    })),
+    remainingExercisesLabel: draft.plan.targets.length > 3 ? `+ ${draft.plan.targets.slice(3).map(item => exerciseName(item.exerciseId)).join(", ")}` : undefined,
+  } : null;
+  const savedWorkoutCard = plannedWorkoutCard || historyWorkoutCard;
+  const plannedTarget = draft.plan?.targets.find(item => item.exerciseId === selected);
+  const initials = user?.email.split("@")[0].split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "U";
+
+  async function saveCreatedPlan() {
+    if (busyRef.current) throw new Error("Please wait for the current change to finish.");
+    if (!creation || !creation.name.trim() || !creation.exercises.length || creation.exercises.some(item => !validTarget(item.sets) || !validTarget(item.reps) || !catalog.some(exercise => exercise.id === item.exerciseId)) || new Set(creation.exercises.map(item => item.exerciseId)).size !== creation.exercises.length)
+      throw new Error("Check the workout name, exercises, sets and reps.");
+    if (draftRef.current.pending || (draftRef.current.exercises.length && !draftRef.current.plan?.ready)) throw new Error("Finish your current workout before saving a new plan.");
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await updateDraft({
+        ...newDraft(),
+        exercises: creation.exercises.map(item => ({exerciseId: item.exerciseId, sets: []})),
+        plan: {name: creation.name.trim(), ready: true, targets: creation.exercises.map(item => ({exerciseId: item.exerciseId, sets: Number(item.sets), reps: Number(item.reps)}))},
+      });
+      setCreation(null);
+      setSelected(null);
+      setWeight("");
+      setReps("");
+      navigate("home");
+    } finally { busyRef.current = false; setBusy(false); }
+  }
 
   async function startSavedWorkout(id: string) {
     if (busyRef.current) throw new Error("Please wait for the current change to finish.");
+    const current = draftRef.current;
+    if (current.plan?.ready && current.key === id) {
+      if (current.plan.targets.some(item => !catalog.some(exercise => exercise.id === item.exerciseId))) throw new Error("An exercise is no longer available. Edit the plan before starting.");
+      busyRef.current = true;
+      setBusy(true);
+      try {
+        await updateDraft({...current, date: newDraft().date, plan: {...current.plan, ready: false}});
+        setSelected(current.exercises[0].exerciseId);
+        setWeight("");
+        setReps(String(current.plan.targets[0].reps));
+        navigate("workout");
+      } finally { busyRef.current = false; setBusy(false); }
+      return;
+    }
     if (draftRef.current.exercises.length || draftRef.current.pending) throw new Error("Resume your current workout first.");
     if (!trainTemplate || String(trainTemplate.id) !== id) throw new Error("This saved workout is no longer available. Reload and try again.");
     if (templateExercises.some(item => !catalog.some(exercise => exercise.id === item.exerciseId))) throw new Error("An exercise in this workout is no longer available. Create a new workout instead.");
@@ -295,7 +349,11 @@ export default function App() {
           await updateDraft({ ...pending, pending: false });
         throw failure;
       }
-      await updateDraft(newDraft());
+      await updateDraft(current.plan ? {
+        ...newDraft(),
+        plan: {...current.plan, ready: true},
+        exercises: current.plan.targets.map(target => ({exerciseId: target.exerciseId, sets: []})),
+      } : newDraft());
       setDetail(saved);
       setSelected(null);
       navigate("detail");
@@ -447,6 +505,7 @@ export default function App() {
   let content: React.ReactNode;
   if (screen === "home")
     content = null;
+  else if (screen === "create") content = null;
   else if (screen === "profile")
     content = (
       <>
@@ -479,7 +538,7 @@ export default function App() {
     content = (
       <>
         <Text accessibilityRole="header" style={styles.title}>
-          Your workout
+          {draft.plan?.name || "Your workout"}
         </Text>
         <Text style={styles.body}>
           Date: {draft.date} · All weights in lb. Logged sets are saved on this
@@ -506,7 +565,7 @@ export default function App() {
                 name: exercise.name,
                 position: draft.exercises.indexOf(entry) + 1,
                 totalExercises: draft.exercises.length,
-                targetLabel: exercise.muscleGroup,
+                targetLabel: plannedTarget ? `Aim for ${plannedTarget.sets} × ${plannedTarget.reps} · ${entry.sets.length} sets logged` : exercise.muscleGroup,
                 loadLabel: "External load in lb",
                 previousSessionLabel: "View previous sessions from Progress",
                 sets: entry.sets.map((s, i) => ({
@@ -898,7 +957,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {screen !== "home" && <View style={styles.nav}>
+      {screen !== "home" && screen !== "create" && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}
@@ -908,35 +967,41 @@ export default function App() {
         </Pressable>
         <Text style={styles.small}>PRIVATE BETA · LB</Text>
       </View>}
-      {screen === "home" ? (
+      {screen === "create" && creation ? (
+        <CreateWorkoutScreen value={creation} catalog={catalog} initials={initials} onChange={setCreation} onSave={saveCreatedPlan} onCancel={() => {setCreation(null); navigate("home");}} />
+      ) : screen === "home" ? (
         <View style={styles.flex}>
           <SavedWorkoutPlansScreen
             plan={savedWorkoutCard}
-            initials={user.email.split("@")[0].split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "U"}
-            loading={trainLoading}
-            loadError={trainError}
+            initials={initials}
+            loading={!plannedWorkoutCard && trainLoading}
+            loadError={plannedWorkoutCard ? undefined : trainError}
             onRetry={() => setTrainReload(value => value + 1)}
             disabled={busy}
             onStartWorkout={startSavedWorkout}
-            editLabel="View saved workout"
+            editLabel={plannedWorkoutCard ? "Edit plan" : "View saved workout"}
             onEditPlan={() => {
-              if (trainTemplate) {
+              if (draft.plan?.ready) {
+                setCreation({name: draft.plan.name, exercises: draft.plan.targets.map(item => ({exerciseId: item.exerciseId, sets: String(item.sets), reps: String(item.reps)}))});
+                navigate("create");
+              } else if (trainTemplate) {
                 setDetail(trainTemplate);
                 navigate("detail");
               }
             }}
-            unfinishedWorkout={draft.exercises.length || draft.pending ? {
+            unfinishedWorkout={(draft.exercises.length || draft.pending) && !draft.plan?.ready ? {
               exerciseLabel: draft.exercises.map(item => exerciseName(item.exerciseId)).join(", "),
               completedSets: draft.exercises.reduce((sum, item) => sum + item.sets.length, 0),
               pendingSave: draft.pending,
             } : undefined}
             onResumeWorkout={() => navigate(draft.pending ? "review" : "workout")}
-            onCreateWorkout={() => {
+            onCreateWorkout={draft.plan?.ready ? undefined : () => {
               if (draftRef.current.exercises.length || draftRef.current.pending || busyRef.current) return;
               setSelected(null);
               setWeight("");
               setReps("");
-              navigate("workout");
+              setCreation({name: "", exercises: []});
+              navigate("create");
             }}
           />
           {alert}

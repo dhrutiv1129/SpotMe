@@ -11,8 +11,9 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Button, NumberField } from "./src/components/WorkoutControls";
-import { WorkoutForm, validateSetInput } from "./src/components/WorkoutForm";
+import { Button, Sheet } from "./src/components/WorkoutControls";
+import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
+import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
 import { AlternativesModel } from "./src/components/AlternativesModel";
 import { ExerciseGuideScreen } from "./src/screens/ExerciseGuideScreen";
 import { api, ApiError, restoreToken, storeToken } from "./src/beta/api";
@@ -23,7 +24,7 @@ import type {
   User,
   Workout,
 } from "./src/beta/api";
-import { loadDraft, newDraft, payload, persistDraft } from "./src/beta/draft";
+import { loadDraft, newDraft, payload, persistDraft, resumeDraft, pauseDraft, resetWorkout, workoutTargets, workoutCounts } from "./src/beta/draft";
 import type { Draft } from "./src/beta/draft";
 import { colors } from "./src/theme";
 import { MainTabs } from "./src/navigation/MainTabs";
@@ -65,7 +66,6 @@ export default function App() {
   const draftRef = useRef(draft);
   const writes = useRef<Promise<void>>(Promise.resolve());
   const [selected, setSelected] = useState<number | null>(null);
-  const [editing, setEditing] = useState<number | null>(null);
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [history, setHistory] = useState<Workout[]>([]);
@@ -78,6 +78,7 @@ export default function App() {
     "dumbbell",
   ]);
   const [beginner, setBeginner] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [register, setRegister] = useState(false);
@@ -89,6 +90,7 @@ export default function App() {
   const [trainLoading, setTrainLoading] = useState(true);
   const [trainError, setTrainError] = useState("");
   const [trainReload, setTrainReload] = useState(0);
+  const sessionInputs = useRef<Record<string, Record<string, {weight: string; reps: string}>>>({});
   const [creation, setCreation] = useState<WorkoutBuilderValue | null>(null);
 
   async function run(action: () => Promise<void>) {
@@ -119,11 +121,13 @@ export default function App() {
     setTrainLoading(true);
     setTrainError("");
     setCreation(null);
+    setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
       loadDraft(account.id),
     ]);
     setCatalog(exercises);
+    sessionInputs.current = {[saved.key]: {...saved.session?.inputs}};
     setDraft(saved);
     draftRef.current = saved;
     setSelected(saved.exercises[0]?.exerciseId ?? null);
@@ -180,15 +184,6 @@ export default function App() {
     draftRef.current = value;
     setDraft(value);
   }
-  function editDraft(change: (value: Draft) => Draft) {
-    void run(async () => {
-      if (draftRef.current.pending)
-        throw new Error(
-          "Confirm the pending save before editing this workout.",
-        );
-      await updateDraft(change(draftRef.current));
-    });
-  }
   async function authenticate() {
     await run(async () => {
       const session = await api<{ token: string; user: User }>(
@@ -201,7 +196,6 @@ export default function App() {
     });
   }
   const exercise = catalog.find((e) => e.id === selected);
-  const entry = draft.exercises.find((e) => e.exerciseId === selected);
   const equipment = [...new Set(catalog.flatMap((e) => e.requiredEquipment))];
   const exerciseName = (id: number) =>
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
@@ -214,28 +208,24 @@ export default function App() {
     setError("");
     setNotice("");
     setScreen(next);
-    setEditing(null);
+    setEditingEquipment(false);
   }
   function selectTab(tab: MainTab) {
     if (busyRef.current || tab === activeTab) return;
+    if (screen === "workout") {
+      void run(async () => {
+        const current = draftRef.current;
+        const session = current.session || resumeDraft(current).session!;
+        await updateDraft({...current, session: {...session, inputs: {...sessionInputs.current[current.key]}}});
+        navigate(tab === "progress" ? "progressHome" : tab === "you" ? "profile" : "home");
+      });
+      return;
+    }
     setActiveTab(tab);
     navigate(
       tab === "train" ? (draftRef.current.pending ? "review" : creation ? "create" : "home") :
       tab === "progress" ? "progressHome" : "profile",
     );
-  }
-  function addExercise(id: number) {
-    editDraft((d) => ({
-      ...d,
-      exercises: d.exercises.some((e) => e.exerciseId === id)
-        ? d.exercises
-        : [...d.exercises, { exerciseId: id, sets: [] }],
-    }));
-    setSelected(id);
-    setEditing(null);
-    setWeight("");
-    const target = draftRef.current.plan?.targets.find(item => item.exerciseId === id);
-    setReps(target ? String(target.reps) : "");
   }
   const trainTemplate = trainWorkouts.find(workout => workout.exercises.some(item => item.sets.length > 0));
   const templateExercises = trainTemplate?.exercises.filter(item => item.sets.length > 0) || [];
@@ -295,7 +285,7 @@ export default function App() {
       busyRef.current = true;
       setBusy(true);
       try {
-        await updateDraft({...current, date: newDraft().date, plan: {...current.plan, ready: false}});
+        await updateDraft(resumeDraft({...current, date: newDraft().date, plan: {...current.plan, ready: false}}));
         setSelected(current.exercises[0].exerciseId);
         setWeight("");
         setReps(String(current.plan.targets[0].reps));
@@ -309,7 +299,7 @@ export default function App() {
     busyRef.current = true;
     setBusy(true);
     try {
-      await updateDraft({...newDraft(), exercises: templateExercises.map(item => ({exerciseId: item.exerciseId, sets: []}))});
+      await updateDraft(resumeDraft({...newDraft(), plan: {name: `Workout · ${templateDate}`, ready: false, targets: templateExercises.map(item => ({exerciseId: item.exerciseId, sets: item.sets.length, reps: item.sets[0].reps}))}, exercises: templateExercises.map(item => ({exerciseId: item.exerciseId, sets: []}))}));
       setSelected(templateExercises[0].exerciseId);
       setWeight("");
       setReps("");
@@ -329,36 +319,44 @@ export default function App() {
       navigate("alternatives");
     });
   }
+  async function changeActiveWorkout(value: Draft) {
+    if (busyRef.current) throw new Error("Please wait for the current change to finish.");
+    if (draftRef.current.pending) throw new Error("Confirm the pending save before changing this workout.");
+    busyRef.current = true;
+    setBusy(true);
+    try { await updateDraft(value); }
+    finally {busyRef.current = false; setBusy(false);}
+  }
   async function save() {
-    await run(async () => {
+    if (busyRef.current) throw new Error("Please wait for the current change to finish.");
+    busyRef.current = true;
+    setBusy(true);
+    try {
       const current = draftRef.current;
-      if (!payload(current).exercises.length)
-        throw new Error("Log at least one set before saving.");
-      const pending = { ...current, pending: true };
+      if (!payload(current).exercises.length) throw new Error("Log at least one set before saving.");
+      const pending = {...pauseDraft(current), pending: true};
       await updateDraft(pending);
       let saved: Workout;
       try {
-        saved = await api<Workout>("/workouts", {
-          method: "POST",
-          body: payload(pending),
-          key: pending.key,
-        });
+        saved = await api<Workout>("/workouts", {method: "POST", body: payload(pending), key: pending.key});
       } catch (failure) {
         // Invalid data was not saved. For other errors, keep the same data for a retry.
-        if (failure instanceof ApiError && failure.status === 400)
-          await updateDraft({ ...pending, pending: false });
+        if (failure instanceof ApiError && failure.status === 400) await updateDraft({...pending, pending: false});
         throw failure;
       }
-      await updateDraft(current.plan ? {
-        ...newDraft(),
-        plan: {...current.plan, ready: true},
-        exercises: current.plan.targets.map(target => ({exerciseId: target.exerciseId, sets: []})),
-      } : newDraft());
+      await updateDraft(resetWorkout(current));
       setDetail(saved);
       setSelected(null);
       navigate("detail");
       setNotice("Workout saved.");
-    });
+    } catch (failure) {
+      if (failure instanceof ApiError && failure.status === 401) {
+        await storeToken(null);
+        setUser(null);
+        setReady(false);
+      }
+      throw failure;
+    } finally {busyRef.current = false; setBusy(false);}
   }
   async function showHistory() {
     await run(async () => {
@@ -534,233 +532,7 @@ export default function App() {
         <Button label="Workout history" variant="secondary" onPress={() => { void showHistory(); }} />
       </>
     );
-  else if (screen === "workout")
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          {draft.plan?.name || "Your workout"}
-        </Text>
-        <Text style={styles.body}>
-          Date: {draft.date} · All weights in lb. Logged sets are saved on this
-          device until you finish.
-        </Text>
-        <Text style={styles.heading}>Choose an exercise</Text>
-        <View style={styles.wrap}>
-          {catalog.map((e) => (
-            <Chip
-              key={e.id}
-              label={e.name}
-              selected={selected === e.id}
-              disabled={busy || draft.pending}
-              onPress={() => addExercise(e.id)}
-            />
-          ))}
-        </View>
-        {entry && exercise && (
-          <>
-            <WorkoutForm
-              key={exercise.id}
-              exercise={{
-                id: String(exercise.id),
-                name: exercise.name,
-                position: draft.exercises.indexOf(entry) + 1,
-                totalExercises: draft.exercises.length,
-                targetLabel: plannedTarget ? `Aim for ${plannedTarget.sets} × ${plannedTarget.reps} · ${entry.sets.length} sets logged` : exercise.muscleGroup,
-                loadLabel: "External load in lb",
-                previousSessionLabel: "View previous sessions from Progress",
-                sets: entry.sets.map((s, i) => ({
-                  ...s,
-                  id: String(i),
-                  number: i + 1,
-                })),
-                nextSetNumber: editing === null ? entry.sets.length + 1 : null,
-                draft: { weight, reps },
-              }}
-              weight={weight}
-              reps={reps}
-              busy={busy}
-              disabled={draft.pending}
-              onWeightChange={setWeight}
-              onRepsChange={setReps}
-              onEditSet={(set) => {
-                setEditing(Number(set.id));
-                setWeight(String(set.weight));
-                setReps(String(set.reps));
-              }}
-              onSwap={() => {
-                void showAlternatives();
-              }}
-              onGuide={() => {
-                setNotice(exercise.instructions);
-              }}
-              onSubmit={(set) => {
-                editDraft((d) => ({
-                  ...d,
-                  exercises: d.exercises.map((e) =>
-                    e.exerciseId === exercise.id
-                      ? { ...e, sets: [...e.sets, set] }
-                      : e,
-                  ),
-                }));
-              }}
-            />
-            {editing !== null && (
-              <View style={styles.card}>
-                <Text style={styles.heading}>Edit set {editing + 1}</Text>
-                <NumberField
-                  label="Weight (lb)"
-                  value={weight}
-                  onChange={setWeight}
-                  disabled={busy}
-                />
-                <NumberField
-                  label="Reps"
-                  value={reps}
-                  onChange={setReps}
-                  integer
-                  disabled={busy}
-                />
-                <Button
-                  label="Save edited set"
-                  disabled={
-                    !!validateSetInput(weight, reps).weight ||
-                    !!validateSetInput(weight, reps).reps ||
-                    busy
-                  }
-                  onPress={() => {
-                    editDraft((d) => ({
-                      ...d,
-                      exercises: d.exercises.map((e) =>
-                        e.exerciseId === selected
-                          ? {
-                              ...e,
-                              sets: e.sets.map((s, i) =>
-                                i === editing
-                                  ? {
-                                      weight: Number(weight),
-                                      reps: Number(reps),
-                                    }
-                                  : s,
-                              ),
-                            }
-                          : e,
-                      ),
-                    }));
-                    setEditing(null);
-                  }}
-                />
-                <Button
-                  label="Remove this set"
-                  variant="danger"
-                  onPress={() => {
-                    editDraft((d) => ({
-                      ...d,
-                      exercises: d.exercises.map((e) =>
-                        e.exerciseId === selected
-                          ? {
-                              ...e,
-                              sets: e.sets.filter((_, i) => i !== editing),
-                            }
-                          : e,
-                      ),
-                    }));
-                    setEditing(null);
-                  }}
-                />
-              </View>
-            )}
-            <Text style={styles.heading}>Machine unavailable?</Text>
-            <Text style={styles.body}>
-              Select only equipment you can use right now.
-            </Text>
-            <View style={styles.wrap}>
-              {equipment.map((e) => (
-                <Chip
-                  key={e}
-                  label={e}
-                  selected={available.includes(e)}
-                  onPress={() =>
-                    setAvailable(
-                      available.includes(e)
-                        ? available.filter((v) => v !== e)
-                        : [...available, e],
-                    )
-                  }
-                />
-              ))}
-            </View>
-            <Chip
-              label="Beginner alternatives only"
-              selected={beginner}
-              onPress={() => setBeginner(!beginner)}
-            />
-            <Button
-              label="Find alternatives"
-              busy={busy}
-              onPress={() => {
-                void showAlternatives();
-              }}
-            />
-          </>
-        )}
-        <Text style={styles.heading}>Logged so far</Text>
-        {draft.exercises
-          .filter((e) => e.sets.length)
-          .map((e) => (
-            <Text key={e.exerciseId} style={styles.body}>
-              {exerciseName(e.exerciseId)} · {e.sets.length} sets
-            </Text>
-          ))}
-        <Button
-          label="Review & finish"
-          variant="secondary"
-          disabled={!payload(draft).exercises.length || busy}
-          onPress={() => navigate("review")}
-        />
-      </>
-    );
-  else if (screen === "review")
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          Review & finish
-        </Text>
-        <Text style={styles.body}>
-          {draft.date} · {number(volume(draft))} lb total volume
-        </Text>
-        {payload(draft).exercises.map((e) => (
-          <View key={e.exerciseId} style={styles.card}>
-            <Text style={styles.heading}>{exerciseName(e.exerciseId)}</Text>
-            {e.sets.map((s, i) => (
-              <Text key={i} style={styles.body}>
-                Set {i + 1}: {s.reps} reps × {number(s.weight)} lb
-              </Text>
-            ))}
-          </View>
-        ))}
-        {draft.pending && (
-          <Text style={styles.body}>
-            A save is awaiting confirmation. Retry to confirm it safely; this
-            will not create a duplicate.
-          </Text>
-        )}
-        <Button
-          label={
-            draft.pending ? "Confirm pending save" : "Finish workout & save"
-          }
-          busy={busy}
-          onPress={() => {
-            void save();
-          }}
-        />
-        <Button
-          label="Keep training"
-          variant="text"
-          disabled={draft.pending || busy}
-          onPress={() => navigate("workout")}
-        />
-      </>
-    );
+  else if (screen === "workout" || screen === "review") content = null;
   else if (screen === "history")
     content = (
       <>
@@ -895,7 +667,23 @@ export default function App() {
   } else content = null;
 
   const specialized =
-    screen === "alternatives" ? (
+    screen === "workout" ? (
+      <ActiveWorkoutScreen key={draft.key} draft={draft} catalog={catalog} selected={selected}
+        inputs={sessionInputs.current[draft.key] ||= {...draft.session?.inputs}}
+        onSelect={setSelected} onChange={changeActiveWorkout}
+        onBack={() => navigate("home")} onReview={() => navigate("review")} onSwap={showAlternatives} />
+    ) : screen === "review" ? (
+      <WorkoutReviewScreen pending={draft.pending} workout={{
+        sessionId: draft.key, name: draft.plan?.name || "Your workout", durationLabel: elapsedLabel(draft),
+        volumeLabel: number(volume(draft)) + " lb", summaryLabel: payload(draft).exercises.length + " exercises · " + workoutCounts(draft).completed + " logged sets",
+        completedSets: workoutCounts(draft).completed, unit: "lb",
+        exercises: payload(draft).exercises.map(item => ({id: String(item.exerciseId), name: exerciseName(item.exerciseId),
+          performanceLabel: item.sets.map(set => number(set.weight) + " lb × " + set.reps).join(" · "), loadLabel: "External load in lb",
+          completedSets: item.sets.map((set, index) => ({...set, id: item.exerciseId + ":" + index, number: index + 1}))})),
+      }} onKeepTraining={() => {void run(async () => {await updateDraft(resumeDraft(draftRef.current)); navigate("workout");});}}
+      onSave={async id => {if (id !== draftRef.current.key) throw new Error("Reopen your current workout."); await save();}} />
+    ) : screen === "alternatives" ? (
+      <View style={styles.flex}>
       <AlternativesModel
         originalExerciseName={exercise?.name || ""}
         targetLabel={exercise?.muscleGroup || ""}
@@ -913,6 +701,8 @@ export default function App() {
           navigate("guide");
         }}
       />
+      <Button label="Edit equipment filters" variant="text" disabled={busy} onPress={() => setEditingEquipment(true)} />
+      </View>
     ) : screen === "guide" && guide ? (
       <ExerciseGuideScreen
         guide={{
@@ -928,19 +718,25 @@ export default function App() {
         onUseExercise={async () => {
           if (draftRef.current.pending)
             throw new Error("Confirm the pending save first.");
-          await updateDraft({
-            ...draftRef.current,
-            exercises: [
-              ...draftRef.current.exercises.filter(
-                (e) => e.exerciseId !== selected || e.sets.length > 0,
-              ),
-              ...(draftRef.current.exercises.some(
-                (e) => e.exerciseId === guide.id,
-              )
-                ? []
-                : [{ exerciseId: guide.id, sets: [] }]),
-            ],
-          });
+          const current = draftRef.current;
+          if (guide.id === selected) {navigate("workout"); return;}
+          if (current.exercises.some(item => item.exerciseId === guide.id)) throw new Error("That exercise is already in this workout. Choose another replacement.");
+          const original = current.exercises.find(item => item.exerciseId === selected);
+          if (!original) throw new Error("The exercise to replace is no longer in your workout.");
+          const targets = workoutTargets(current);
+          const target = targets.find(item => item.exerciseId === selected);
+          const remainingSets = target ? Math.max(0, target.sets - original.sets.length) : 0;
+          if (target && remainingSets === 0) throw new Error("All sets for this exercise are logged. Choose an unfinished exercise to swap.");
+          const session = current.session || resumeDraft(current).session!;
+          await changeActiveWorkout({...current, session: {...session,
+            targets: target ? targets.flatMap(item => item.exerciseId !== selected ? [item] : [
+              ...(original.sets.length ? [{...item, sets: original.sets.length}] : []),
+              {...item, exerciseId: guide.id, sets: remainingSets},
+            ]) : targets,
+            substitutions: {...session.substitutions, [guide.id]: session.substitutions?.[String(selected)] || selected!},
+          }, exercises: current.exercises.flatMap(item => item.exerciseId !== selected ? [item] : [
+            ...(item.sets.length ? [item] : []), {exerciseId: guide.id, sets: []},
+          ])});
           setSelected(guide.id);
           setWeight("");
           setReps("");
@@ -957,7 +753,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {screen !== "home" && screen !== "create" && <View style={styles.nav}>
+      {!["home", "create", "workout", "review"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}
@@ -1035,6 +831,13 @@ export default function App() {
         </ScrollView>
       )}
       <MainTabs activeTab={activeTab} disabled={busy} onSelect={selectTab} />
+      {editingEquipment && <Sheet title="Equipment filters" locked={busy} onClose={() => setEditingEquipment(false)}>
+        <Text style={styles.body}>Choose the equipment to include when finding swaps.</Text>
+        <View style={styles.wrap}>{equipment.map(item => <Chip key={item} label={item} selected={available.includes(item)} disabled={busy} onPress={() => setAvailable(value => value.includes(item) ? value.filter(selected => selected !== item) : [...value, item])} />)}</View>
+        <Chip label="Beginner alternatives only" selected={beginner} disabled={busy} onPress={() => setBeginner(value => !value)} />
+        {alert}
+        <Button label="Find alternatives" busy={busy} onPress={() => {void showAlternatives();}} />
+      </Sheet>}
     </KeyboardAvoidingView>
   );
 }

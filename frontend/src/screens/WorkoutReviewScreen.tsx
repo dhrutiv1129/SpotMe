@@ -26,12 +26,13 @@ export interface WorkoutReview {
 interface Props {
   workout: WorkoutReview;
   onKeepTraining: () => void;
-  onSave: (sessionId: string) => Promise<SavedWorkoutReceipt>;
-  onSaved: (receipt: SavedWorkoutReceipt) => void;
+  onSave: (sessionId: string) => Promise<SavedWorkoutReceipt | void>;
+  onSaved?: (receipt: SavedWorkoutReceipt) => void;
+  pending?: boolean;
 }
 
 /** Shows logged sets for review. Drafts stay in the workout form. */
-export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved}: Props) {
+export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved, pending}: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const writeInFlight = useRef(false);
@@ -43,10 +44,11 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved}: 
     setError(null);
     try {
       const receipt = await onSave(workout.sessionId);
+      if (!receipt) return;
       if (receipt.status !== 'saved' || receipt.sessionId !== workout.sessionId) {
         throw new Error('Your workout save has not been confirmed yet.');
       }
-      onSaved(receipt);
+      onSaved?.(receipt);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Please try again.');
     } finally {
@@ -57,8 +59,8 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved}: 
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={onKeepTraining} style={styles.back}>
-        <Image source={require('../assets/back.png')} style={styles.backIcon} />
+      <Pressable accessibilityRole="button" disabled={busy || pending} onPress={onKeepTraining} style={styles.back}>
+        <Image source={require('../assets/workout/back.png')} style={styles.backIcon} />
         <Text style={styles.header}>Your workout</Text>
       </Pressable>
       <Text accessibilityRole="header" style={styles.title}>Review & finish</Text>
@@ -82,15 +84,16 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved}: 
       ))}
       </View>
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-      <Button label="Save workout" busy={busy} disabled={workout.completedSets === 0} onPress={() => {void save();}} />
-      <Button label="Keep training" variant="text" disabled={busy} onPress={onKeepTraining} />
+      {pending && <Text style={styles.body}>Your save is awaiting confirmation. Retry with this same workout to avoid a duplicate. Your logged sets are kept on this device.</Text>}
+      <Button label={pending ? 'Confirm pending save' : 'Save workout'} busy={busy} disabled={workout.completedSets === 0} onPress={() => {void save();}} />
+      <Button label="Keep training" variant="text" disabled={busy || pending} onPress={onKeepTraining} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44},
   backIcon: {width: 22, height: 22},
   header: {color: colors.ink, fontSize: 15, fontWeight: '700'},

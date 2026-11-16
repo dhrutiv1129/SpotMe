@@ -21,6 +21,8 @@ export interface ExerciseView {
   previousSessionLabel: string;
   sets: LoggedSet[];
   nextSetNumber: number | null;
+  targetSets?: number;
+  targetReps?: number;
   draft: {weight: string; reps: string};
 }
 
@@ -36,12 +38,14 @@ interface Props {
   onEditSet: (set: LoggedSet) => void;
   onSwap: (exerciseId: string) => void;
   onGuide: (exerciseId: string) => void;
+  onLog?: () => void;
+  canLog?: boolean;
 }
 
 /** Displays one exercise and its sets without calculating workout results. */
 export function ExerciseRow({
   exercise, weight, reps, weightError, repsError, disabled,
-  onWeightChange, onRepsChange, onEditSet, onSwap, onGuide,
+  onWeightChange, onRepsChange, onEditSet, onSwap, onGuide, onLog, canLog,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -67,6 +71,7 @@ export function ExerciseRow({
           accessibilityRole="button"
           style={styles.linkTarget}
           onPress={() => onGuide(exercise.id)}
+          disabled={disabled}
         >
           <Text style={styles.linkRegular}>How to →</Text>
         </Pressable>
@@ -77,10 +82,10 @@ export function ExerciseRow({
       </Text>
       <View style={styles.setCard}>
         <View style={styles.tableHeader}>
-          <Text style={styles.columnLabel}>SET</Text>
+          <Text style={[styles.columnLabel, styles.numberColumn]}>SET</Text>
           <Text style={styles.columnLabel}>LB</Text>
           <Text style={styles.columnLabel}>REPS</Text>
-          <Text style={styles.columnLabel}>DONE</Text>
+          <Text style={[styles.columnLabel, styles.doneColumn]}>DONE</Text>
         </View>
         {exercise.sets.map((set) => (
           <SetRow
@@ -104,8 +109,18 @@ export function ExerciseRow({
             weightError={weightError}
             repsError={repsError}
             disabled={disabled}
+            onLog={onLog}
+            canLog={canLog}
           />
         )}
+        {Array.from({length: Math.min(100, Math.max(0, (exercise.targetSets || 0) - exercise.sets.length - (exercise.nextSetNumber === null ? 0 : 1)))}, (_, index) => (
+          <View key={`pending-${index}`} style={styles.pendingRow} accessibilityLabel={`Set ${exercise.sets.length + index + 2}, pending`}>
+            <Text style={styles.pendingNumber}>{exercise.sets.length + index + 2}</Text>
+            <View style={styles.pendingValue} />
+            <Text style={styles.pendingValue}>{exercise.targetReps || '—'}</Text>
+            <Text style={styles.pendingStatus}>—</Text>
+          </View>
+        ))}
         <Text style={styles.previous}>{exercise.previousSessionLabel}</Text>
       </View>
     </View>
@@ -154,7 +169,13 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
-  tableHeader: {flexDirection: 'row', paddingVertical: 6},
+  tableHeader: {flexDirection: 'row', paddingVertical: 4, paddingHorizontal: 8, gap: 10},
+  numberColumn: {flex: 0, width: 30},
+  doneColumn: {flex: 0, width: 36},
+  pendingRow: {flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 8},
+  pendingNumber: {width: 30, textAlign: 'center', fontSize: 14, color: colors.ink, fontWeight: '700'},
+  pendingValue: {flex: 1, height: 44, borderRadius: 8, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, textAlign: 'center', lineHeight: 42, color: colors.muted, fontSize: 18},
+  pendingStatus: {width: 36, textAlign: 'center', color: colors.muted},
   columnLabel: {
     flex: 1,
     fontSize: 10,

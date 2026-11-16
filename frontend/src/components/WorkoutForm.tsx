@@ -71,6 +71,11 @@ export function WorkoutForm({
         onEditSet={onEditSet}
         onSwap={onSwap}
         onGuide={onGuide}
+        canLog={!disabled && !busy && !invalid}
+        onLog={() => {
+          setTouched(true);
+          if (!disabled && !busy && !invalid) onSubmit({weight: Number(weight), reps: Number(reps)});
+        }}
       />
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       {exercise.nextSetNumber !== null && (

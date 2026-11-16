@@ -1,6 +1,7 @@
 import React, {useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,7 @@ export interface WorkoutView {
   completedSets: number;
   totalSets: number;
   pendingSets: number;
+  hasTargets?: boolean;
   exercise: ExerciseView;
   restLabel?: string;
   nextExercise?: {id: string; name: string; targetLabel: string};
@@ -55,6 +57,7 @@ interface Props {
   onResume: (sessionId: string) => Promise<void>;
   onDiscard: (sessionId: string) => Promise<void>;
   onSaveForLater: (sessionId: string) => Promise<void>;
+  onDraftChange?: (exerciseId: string, input: {weight: string; reps: string}) => void;
 }
 
 /** Uses totals and status from the backend. Keeps unsaved input and open dialogs here. */
@@ -175,9 +178,10 @@ function ActiveWorkout({
             accessibilityRole="button"
             accessibilityLabel="Back to Train"
             onPress={actions.onBack}
+            disabled={busy}
             style={styles.topButton}
           >
-            <Text style={styles.back}>‹</Text>
+            <Image source={require('../assets/workout/back.png')} style={styles.icon} />
             <Text style={styles.topTitle}>Your workout</Text>
           </Pressable>
           <Pressable
@@ -192,7 +196,7 @@ function ActiveWorkout({
               );
             }}
           >
-            <Text style={styles.pause}>Ⅱ</Text>
+            <Image source={require('../assets/workout/pause.png')} style={styles.icon} />
           </Pressable>
         </View>
 
@@ -201,14 +205,14 @@ function ActiveWorkout({
             <Text style={styles.eyebrow}>
               {workout.status === 'paused' ? 'PAUSED' : 'IN PROGRESS'}
             </Text>
-            <Text style={styles.heroTime}>◷ {workout.elapsedLabel}</Text>
+            <View style={styles.timer}><Image source={require('../assets/workout/timer.png')} style={styles.timerIcon} /><Text style={styles.heroTime}>{workout.elapsedLabel}</Text></View>
           </View>
           <Text style={styles.heroTitle}>{workout.name}</Text>
           <View
             style={styles.segments}
             accessibilityLabel={`${workout.completedSets} of ${workout.totalSets} sets logged`}
           >
-            {Array.from({length: workout.totalSets}, (_, index) => (
+            {Array.from({length: Math.min(workout.totalSets, 100)}, (_, index) => (
               <View
                 key={index}
                 style={[
@@ -219,8 +223,7 @@ function ActiveWorkout({
             ))}
           </View>
           <Text style={styles.heroCaption}>
-            {workout.completedSets} of {workout.totalSets} sets logged ·{' '}
-            {workout.pendingSets} sets pending
+            {workout.hasTargets === false ? `${workout.completedSets} sets logged` : `${workout.completedSets} of ${workout.totalSets} sets logged · ${workout.pendingSets} sets pending`}
           </Text>
         </View>
 
@@ -228,8 +231,8 @@ function ActiveWorkout({
           exercise={exercise}
           weight={weight}
           reps={reps}
-          onWeightChange={setWeight}
-          onRepsChange={setReps}
+          onWeightChange={(value) => {setWeight(value); actions.onDraftChange?.(exercise.id, {weight: value, reps});}}
+          onRepsChange={(value) => {setReps(value); actions.onDraftChange?.(exercise.id, {weight, reps: value});}}
           disabled={workout.status === 'paused'}
           busy={busy}
           error={sheet ? undefined : error ?? undefined}
@@ -261,6 +264,7 @@ function ActiveWorkout({
           <Pressable
             accessibilityRole="button"
             style={styles.linkTarget}
+            disabled={busy}
             onPress={actions.onFullPlan}
           >
             <Text style={styles.linkRegular}>Full plan →</Text>
@@ -273,10 +277,11 @@ function ActiveWorkout({
             onPress={() => {
               if (nextExercise) actions.onNextExercise(nextExercise.id);
             }}
+            disabled={busy || workout.status === 'paused'}
             style={styles.nextCard}
           >
             <View style={styles.exerciseIcon}>
-              <Text style={styles.exerciseGlyph}>↗</Text>
+              <Image source={require('../assets/workout/dumbbell.png')} style={styles.icon} />
             </View>
             <View style={styles.nextCopy}>
               <Text style={styles.nextName}>{workout.nextExercise.name}</Text>
@@ -284,7 +289,7 @@ function ActiveWorkout({
                 {workout.nextExercise.targetLabel}
               </Text>
             </View>
-            <Text style={styles.back}>›</Text>
+            <Image source={require('../assets/workout/next.png')} style={styles.smallIcon} />
           </Pressable>
         )}
         <Button
@@ -358,12 +363,12 @@ function ActiveWorkout({
                 onPress={() => {
                   void submit(
                     () => actions.onResume(workout.sessionId),
-                    closeSheet,
+                    () => setSheet(null),
                   );
                 }}
               />
               <Button
-                label="Save for later"
+                label="Keep draft for later"
                 variant="secondary"
                 disabled={busy}
                 onPress={() => {
@@ -433,11 +438,11 @@ function ActiveWorkout({
                 </Text>
               </View>
               <Text style={styles.caption}>
-                Original values · {selectedSet.weight} kg × {selectedSet.reps}{' '}
+                Previously · {selectedSet.weight} lb × {selectedSet.reps}{' '}
                 reps
               </Text>
               <NumberField
-                label="WEIGHT (KG)"
+                label="WEIGHT (LB)"
                 value={editWeight}
                 onChange={setEditWeight}
                 error={editErrors.weight}
@@ -463,7 +468,7 @@ function ActiveWorkout({
                         weight: Number(editWeight),
                         reps: Number(editReps),
                       }),
-                    closeSheet,
+                    () => setSheet(null),
                   );
                 }}
               />
@@ -494,7 +499,7 @@ function ActiveWorkout({
                   {exercise.name} · Set {selectedSet.number}
                 </Text>
                 <Text style={styles.body}>
-                  {selectedSet.weight} kg × {selectedSet.reps} reps
+                  {selectedSet.weight} lb × {selectedSet.reps} reps
                 </Text>
               </View>
               <Text style={styles.body}>
@@ -510,7 +515,7 @@ function ActiveWorkout({
                   void submit(
                     () =>
                       actions.onRemoveSet(workout.sessionId, selectedSet.id),
-                    closeSheet,
+                    () => setSheet(null),
                   );
                 }}
               />
@@ -533,7 +538,11 @@ function ActiveWorkout({
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 12, paddingBottom: 24, gap: 16},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  icon: {width: 22, height: 22},
+  smallIcon: {width: 18, height: 18},
+  timerIcon: {width: 14, height: 14},
+  timer: {flexDirection: 'row', alignItems: 'center', gap: 6},
   center: {
     flex: 1,
     backgroundColor: colors.background,
@@ -545,12 +554,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
   topButton: {
     minHeight: 44,
     flexDirection: 'row',
-    gap: 14,
+    gap: 10,
     alignItems: 'center',
   },
   topTitle: {fontSize: 15, fontWeight: '700', color: colors.ink},
@@ -562,7 +570,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pause: {color: colors.ink, fontSize: 24},
-  hero: {backgroundColor: colors.ink, borderRadius: 22, padding: 20, gap: 14},
+  hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
   between: {
     flexDirection: 'row',
     alignItems: 'center',

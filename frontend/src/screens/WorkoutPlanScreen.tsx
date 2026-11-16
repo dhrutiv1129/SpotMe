@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -50,6 +51,7 @@ interface Props {
   error?: string;
   onRetry: () => void;
   onReturnToWorkout: () => void;
+  onSelectExercise?: (id: string) => void;
 }
 
 const statusLabels = {
@@ -60,7 +62,7 @@ const statusLabels = {
 
 /** Shows plan and logged sets */
 export function WorkoutPlanScreen({
-  plan, loading, error, onRetry, onReturnToWorkout,
+  plan, loading, error, onRetry, onReturnToWorkout, onSelectExercise,
 }: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -69,7 +71,7 @@ export function WorkoutPlanScreen({
         onPress={onReturnToWorkout}
         style={styles.backButton}
       >
-        <Text style={styles.backArrow}>‹</Text>
+        <Image source={require('../assets/workout/back.png')} style={styles.backIcon} />
         <Text style={styles.backLabel}>Back to active workout</Text>
       </Pressable>
 
@@ -95,7 +97,7 @@ export function WorkoutPlanScreen({
         <>
           <View style={styles.heading}>
             <Text style={styles.date}>{plan.dateLabel}</Text>
-            <Text accessibilityRole="header" style={styles.title}>Your full plan.</Text>
+            <Text accessibilityRole="header" style={styles.title}>Workout overview</Text>
             <Text style={styles.body}>{plan.name} · {plan.description}</Text>
           </View>
 
@@ -112,7 +114,7 @@ export function WorkoutPlanScreen({
               style={styles.segments}
               accessibilityLabel={`${plan.completedSets} of ${plan.totalSets} sets logged`}
             >
-              {Array.from({length: plan.totalSets}, (_, index) => (
+              {Array.from({length: Math.min(plan.totalSets, 100)}, (_, index) => (
                 <View
                   key={index}
                   style={[styles.segment, index < plan.completedSets && styles.loggedSegment]}
@@ -127,10 +129,10 @@ export function WorkoutPlanScreen({
               key={exercise.id}
               style={[styles.exercise, exercise.id === plan.activeExerciseId && styles.activeExercise]}
             >
-              <View style={styles.between}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Go to ${exercise.name}`} disabled={!onSelectExercise} onPress={() => onSelectExercise?.(exercise.id)} style={styles.between}>
                 <Text accessibilityRole="header" style={styles.exerciseName}>{exercise.name}</Text>
                 <Text style={styles.count}>{exercise.completedSets}/{exercise.targetSets}</Text>
-              </View>
+              </Pressable>
               {!!exercise.substitutionLabel && (
                 <Text style={styles.badge}>{exercise.substitutionLabel}</Text>
               )}
@@ -149,7 +151,7 @@ export function WorkoutPlanScreen({
               {exercise.sets.map((set) => (
                 <View key={set.id} style={[styles.set, set.status === 'logged' && styles.loggedSet]}>
                   <Text style={[styles.value, styles.number]}>{set.number}</Text>
-                  <Text style={[styles.body, styles.target]}>{set.targetReps} reps</Text>
+                  <Text style={[styles.body, styles.target]}>{set.targetReps ? `${set.targetReps} reps` : '—'}</Text>
                   <Text style={[styles.value, styles.load]}>
                     {set.status !== 'pending' && set.weight !== null && set.reps !== null
                       ? `${set.weight} × ${set.reps}` : '—'}
@@ -162,10 +164,7 @@ export function WorkoutPlanScreen({
             </View>
           ))}
 
-          <Text style={styles.body}>
-            Previous loads are suggestions, not logged sets or recommended
-            weights. Choose a comfortable load; {plan.unit} is explicit throughout.
-          </Text>
+          <Text style={styles.body}>Tap an exercise name to return to its set log. Draft input is not completed work.</Text>
           <Button label="←  Return to active workout" onPress={onReturnToWorkout} />
         </>
       )}
@@ -175,7 +174,8 @@ export function WorkoutPlanScreen({
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 22},
+  backIcon: {width: 22, height: 22},
   backButton: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 14},
   backArrow: {color: colors.ink, fontSize: 28},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},

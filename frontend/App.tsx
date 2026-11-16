@@ -28,6 +28,7 @@ import type { Draft } from "./src/beta/draft";
 import { colors } from "./src/theme";
 import { MainTabs } from "./src/navigation/MainTabs";
 import type { MainTab } from "./src/navigation/MainTabs";
+import { SavedWorkoutPlansScreen } from "./src/screens/SavedWorkoutPlansScreen";
 
 type Screen =
   | "home"
@@ -81,6 +82,10 @@ export default function App() {
   const busyRef = useRef(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [trainWorkouts, setTrainWorkouts] = useState<Workout[]>([]);
+  const [trainLoading, setTrainLoading] = useState(true);
+  const [trainError, setTrainError] = useState("");
+  const [trainReload, setTrainReload] = useState(0);
 
   async function run(action: () => Promise<void>) {
     if (busyRef.current) return;
@@ -106,6 +111,9 @@ export default function App() {
   async function initialize(account: User) {
     setReady(false);
     setUser(account);
+    setTrainWorkouts([]);
+    setTrainLoading(true);
+    setTrainError("");
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
       loadDraft(account.id),
@@ -138,6 +146,23 @@ export default function App() {
   useEffect(() => {
     void boot();
   }, []);
+
+  useEffect(() => {
+    if (!ready || !user || screen !== "home") return;
+    let cancelled = false;
+    setTrainLoading(true);
+    setTrainError("");
+    setTrainWorkouts([]);
+    void api<Workout[]>("/workouts")
+      .then(workouts => {
+        if (!cancelled) setTrainWorkouts([...workouts].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id));
+      })
+      .catch(failure => {
+        if (!cancelled) setTrainError(failure instanceof Error ? failure.message : "Saved workouts could not be loaded.");
+      })
+      .finally(() => { if (!cancelled) setTrainLoading(false); });
+    return () => { cancelled = true; };
+  }, [ready, user?.id, screen, trainReload]);
 
   // Save local changes in order. Keep the retry key and workout data before sending.
   async function updateDraft(value: Draft) {
@@ -190,7 +215,7 @@ export default function App() {
     if (busyRef.current || tab === activeTab) return;
     setActiveTab(tab);
     navigate(
-      tab === "train" ? (draftRef.current.pending ? "review" : draftRef.current.exercises.length ? "workout" : "home") :
+      tab === "train" ? (draftRef.current.pending ? "review" : "home") :
       tab === "progress" ? "progressHome" : "profile",
     );
   }
@@ -205,6 +230,40 @@ export default function App() {
     setEditing(null);
     setWeight("");
     setReps("");
+  }
+  const trainTemplate = trainWorkouts.find(workout => workout.exercises.some(item => item.sets.length > 0));
+  const templateExercises = trainTemplate?.exercises.filter(item => item.sets.length > 0) || [];
+  const templateDate = trainTemplate ? new Date(`${trainTemplate.date}T12:00:00`).toLocaleDateString(undefined, {day: "numeric", month: "short"}) : "";
+  const savedWorkoutCard = trainTemplate ? {
+    id: String(trainTemplate.id),
+    name: `Workout · ${templateDate}`,
+    summaryLabel: `${templateExercises.length} exercises · ${templateExercises.reduce((sum, item) => sum + item.sets.length, 0)} sets`,
+    exercisePreview: templateExercises.slice(0, 3).map((item, index) => ({
+      id: String(item.exerciseId),
+      orderLabel: String(index + 1).padStart(2, "0"),
+      name: exerciseName(item.exerciseId),
+      targetLabel: item.sets.every(set => set.reps === item.sets[0].reps) ? `${item.sets.length} × ${item.sets[0].reps}` : `${item.sets.length} sets`,
+    })),
+    remainingExercisesLabel: templateExercises.length > 3 ? `+ ${templateExercises.slice(3).map(item => exerciseName(item.exerciseId)).join(", ")}` : undefined,
+  } : null;
+
+  async function startSavedWorkout(id: string) {
+    if (busyRef.current) throw new Error("Please wait for the current change to finish.");
+    if (draftRef.current.exercises.length || draftRef.current.pending) throw new Error("Resume your current workout first.");
+    if (!trainTemplate || String(trainTemplate.id) !== id) throw new Error("This saved workout is no longer available. Reload and try again.");
+    if (templateExercises.some(item => !catalog.some(exercise => exercise.id === item.exerciseId))) throw new Error("An exercise in this workout is no longer available. Create a new workout instead.");
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await updateDraft({...newDraft(), exercises: templateExercises.map(item => ({exerciseId: item.exerciseId, sets: []}))});
+      setSelected(templateExercises[0].exerciseId);
+      setWeight("");
+      setReps("");
+      navigate("workout");
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
   async function showAlternatives() {
     await run(async () => {
@@ -387,57 +446,7 @@ export default function App() {
 
   let content: React.ReactNode;
   if (screen === "home")
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          Your training.
-        </Text>
-        <Text style={styles.body}>{user.email}</Text>
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>Your next rep starts here.</Text>
-          <Text style={styles.heroText}>
-            A simple log. A clearer view of your progress. A backup plan for
-            busy equipment.
-          </Text>
-          <Button
-            label={
-              draft.exercises.length ? "Continue workout" : "Start a workout"
-            }
-            onPress={() => navigate(draft.pending ? "review" : "workout")}
-          />
-        </View>
-        <Button
-          label="Workout history"
-          variant="secondary"
-          onPress={() => {
-            void showHistory();
-          }}
-        />
-        <Text style={styles.heading}>See your progress</Text>
-        <Text style={styles.body}>
-          Choose an exercise to see your logged sessions and personal records.
-        </Text>
-        <View style={styles.wrap}>
-          {catalog.map((e) => (
-            <Chip
-              key={e.id}
-              label={e.name}
-              onPress={() => {
-                void showProgress(e.id);
-              }}
-            />
-          ))}
-        </View>
-        <Button
-          label="Sign out"
-          variant="text"
-          disabled={busy}
-          onPress={() => {
-            void logout();
-          }}
-        />
-      </>
-    );
+    content = null;
   else if (screen === "profile")
     content = (
       <>
@@ -889,7 +898,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      <View style={styles.nav}>
+      {screen !== "home" && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}
@@ -898,8 +907,41 @@ export default function App() {
           <Text style={styles.brand}>SPOTME</Text>
         </Pressable>
         <Text style={styles.small}>PRIVATE BETA · LB</Text>
-      </View>
-      {specialized ? (
+      </View>}
+      {screen === "home" ? (
+        <View style={styles.flex}>
+          <SavedWorkoutPlansScreen
+            plan={savedWorkoutCard}
+            initials={user.email.split("@")[0].split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "U"}
+            loading={trainLoading}
+            loadError={trainError}
+            onRetry={() => setTrainReload(value => value + 1)}
+            disabled={busy}
+            onStartWorkout={startSavedWorkout}
+            editLabel="View saved workout"
+            onEditPlan={() => {
+              if (trainTemplate) {
+                setDetail(trainTemplate);
+                navigate("detail");
+              }
+            }}
+            unfinishedWorkout={draft.exercises.length || draft.pending ? {
+              exerciseLabel: draft.exercises.map(item => exerciseName(item.exerciseId)).join(", "),
+              completedSets: draft.exercises.reduce((sum, item) => sum + item.sets.length, 0),
+              pendingSave: draft.pending,
+            } : undefined}
+            onResumeWorkout={() => navigate(draft.pending ? "review" : "workout")}
+            onCreateWorkout={() => {
+              if (draftRef.current.exercises.length || draftRef.current.pending || busyRef.current) return;
+              setSelected(null);
+              setWeight("");
+              setReps("");
+              navigate("workout");
+            }}
+          />
+          {alert}
+        </View>
+      ) : specialized ? (
         <View style={styles.flex}>
           {specialized}
           {alert}

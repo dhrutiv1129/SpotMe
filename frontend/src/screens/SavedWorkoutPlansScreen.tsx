@@ -17,21 +17,29 @@ export interface SavedWorkoutPlanView {
 }
 
 interface Props {
-  plan: SavedWorkoutPlanView;
+  plan: SavedWorkoutPlanView | null;
   initials: string;
   onStartWorkout: (planId: string) => Promise<void>;
   onEditPlan: (planId: string) => void;
   onCreateWorkout?: () => void;
+  editLabel?: string;
+  loading?: boolean;
+  loadError?: string;
+  onRetry?: () => void;
+  disabled?: boolean;
+  unfinishedWorkout?: {exerciseLabel: string; completedSets: number; pendingSave: boolean};
+  onResumeWorkout?: () => void;
 }
 
 /** Shows the saved plan before editing it or starting a workout. */
-export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditPlan, onCreateWorkout}: Props) {
+export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditPlan, onCreateWorkout, editLabel = 'Edit plan', loading, loadError, onRetry, disabled, unfinishedWorkout, onResumeWorkout}: Props) {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const startingRef = useRef(false);
+  const locked = starting || !!disabled;
 
   async function start() {
-    if (startingRef.current) return;
+    if (startingRef.current || disabled || unfinishedWorkout || !plan) return;
     startingRef.current = true;
     setStarting(true);
     setError(null);
@@ -46,17 +54,43 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <View style={styles.identity}>
-          <View style={styles.brandMark}><Image source={require('../assets/brand-dumbbell.png')} style={styles.brandIcon} /></View>
+          <View style={styles.brandMark}><Image source={require('../assets/train-brand.png')} accessible={false} style={styles.brandIcon} /></View>
           <Text style={styles.brand}>SpotMe</Text>
         </View>
         <View style={styles.avatar}><Text style={styles.initials}>{initials}</Text></View>
       </View>
       <Text accessibilityRole="header" style={styles.title}>Your workouts</Text>
+      {unfinishedWorkout && (
+        <View style={styles.resumeSection}>
+          <View style={styles.resumeCard}>
+            <Text style={styles.resumeBadge}>{unfinishedWorkout.pendingSave ? 'SAVE AWAITING CONFIRMATION' : 'UNFINISHED WORKOUT'}</Text>
+            <Text style={styles.resumeTitle}>Your current workout</Text>
+            <Text style={styles.resumeBody}>{unfinishedWorkout.exerciseLabel}</Text>
+            <Text style={styles.resumeBody}>{unfinishedWorkout.completedSets} sets logged</Text>
+          </View>
+          <Button label={unfinishedWorkout.pendingSave ? 'Confirm pending save' : 'Resume workout'} disabled={locked} onPress={() => onResumeWorkout?.()} />
+        </View>
+      )}
+      {loading && <View style={styles.empty}><ActivityIndicator color={colors.green} /><Text style={styles.body}>Loading saved workouts…</Text></View>}
+      {!!loadError && (
+        <View style={styles.empty}>
+          <Text accessibilityRole="alert" style={styles.error}>{loadError}</Text>
+          {onRetry && <Button label="Retry loading workouts" variant="secondary" onPress={onRetry} />}
+        </View>
+      )}
+      {!loading && !loadError && !plan && (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>Your next workout starts here.</Text>
+          <Text style={styles.body}>Create a workout and save it to history. You can use it again from here.</Text>
+        </View>
+      )}
+      {!loading && !loadError && plan && <>
+      {unfinishedWorkout && <Text style={styles.sectionTitle}>Saved workout</Text>}
       <View style={styles.plan}>
-        <ImageBackground source={require('../assets/workout-cover.png')} resizeMode="cover" style={styles.cover}>
+        <ImageBackground source={require('../assets/train-cover.png')} resizeMode="cover" style={styles.cover}>
           <View style={[StyleSheet.absoluteFill, styles.scrim]} />
           <Text style={styles.badge}>SAVED WORKOUT</Text>
           <View style={styles.planHeading}>
@@ -75,16 +109,18 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
             ))}
             {!!plan.remainingExercisesLabel && <Text style={styles.remaining}>{plan.remainingExercisesLabel}</Text>}
           </View>
-          <Pressable accessibilityRole="button" accessibilityState={{disabled: starting, busy: starting}} disabled={starting} onPress={() => {void start();}} style={({pressed}) => [styles.start, (pressed || starting) && styles.dimmed]}>
+          <Pressable accessibilityRole="button" accessibilityState={{disabled: locked || !!unfinishedWorkout, busy: starting}} disabled={locked || !!unfinishedWorkout} onPress={() => {void start();}} style={({pressed}) => [styles.start, (pressed || locked || !!unfinishedWorkout) && styles.dimmed]}>
             <Text style={styles.startLabel}>{starting ? 'Starting workout…' : 'Start workout'}</Text>
-            {starting ? <ActivityIndicator color={colors.surface} /> : <Image source={require('../assets/play.png')} style={styles.playIcon} />}
+            {starting ? <ActivityIndicator color={colors.surface} /> : <Image source={require('../assets/train-play.png')} accessible={false} style={styles.playIcon} />}
           </Pressable>
         </View>
       </View>
+      <Button label={editLabel} variant="secondary" disabled={locked} onPress={() => onEditPlan(plan.id)} />
+      {unfinishedWorkout && <Text style={styles.body}>Resume your current workout before starting another.</Text>}
+      </>}
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-      <Button label="Edit plan" variant="secondary" disabled={starting} onPress={() => onEditPlan(plan.id)} />
       {onCreateWorkout && (
-        <Pressable accessibilityRole="button" disabled={starting} onPress={onCreateWorkout} style={styles.create}>
+        <Pressable accessibilityRole="button" accessibilityState={{disabled: locked || !!unfinishedWorkout}} disabled={locked || !!unfinishedWorkout} onPress={onCreateWorkout} style={[styles.create, (locked || !!unfinishedWorkout) && styles.dimmed]}>
           <Text style={styles.createLabel}>+ Create workout</Text>
         </Pressable>
       )}
@@ -124,4 +160,13 @@ const styles = StyleSheet.create({
   create: {minHeight: 44, alignItems: 'center', justifyContent: 'center'},
   createLabel: {color: colors.ink, fontSize: 14, fontWeight: '700'},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},
+  empty: {backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 22, padding: 22, gap: 16},
+  emptyTitle: {color: colors.ink, fontSize: 22, fontWeight: '700'},
+  body: {color: colors.muted, fontSize: 13, lineHeight: 20},
+  sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700'},
+  resumeSection: {gap: 12},
+  resumeCard: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
+  resumeBadge: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3},
+  resumeTitle: {color: colors.surface, fontSize: 27, fontWeight: '700', letterSpacing: -0.8},
+  resumeBody: {color: '#B7C6B9', fontSize: 13, lineHeight: 20},
 });

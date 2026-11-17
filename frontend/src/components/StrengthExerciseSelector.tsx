@@ -91,23 +91,23 @@ export function StrengthExerciseSelector({selectedExerciseId, searchExercises, o
             <View style={styles.heading}>
               <Text accessibilityRole="header" style={styles.title}>Choose exercise</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Close exercise selector" disabled={selecting} onPress={close} style={styles.close}>
-                <Image source={require('../assets/close.png')} style={styles.icon} />
+                <Image source={require('../assets/strength/close.png')} style={styles.icon} />
               </Pressable>
             </View>
             <View style={styles.search}>
-              <Image source={require('../assets/search.png')} style={styles.searchIcon} />
+              <Image source={require('../assets/strength/search.png')} style={styles.searchIcon} />
               <TextInput accessibilityLabel="Search exercises" placeholder="Search exercises" placeholderTextColor={colors.muted} value={query} editable={!selecting} onChangeText={setQuery} autoCapitalize="none" autoCorrect={false} style={styles.input} />
             </View>
             {loading && <ActivityIndicator accessibilityLabel="Searching exercises" color={colors.green} />}
             <View accessibilityRole="radiogroup" accessibilityLabel="Strength exercise" style={styles.options}>
               {options.map((exercise) => (
                 <Pressable key={exercise.id} accessibilityRole="radio" accessibilityLabel={`${exercise.name}, ${exercise.description}`} accessibilityState={{checked: exercise.id === selectedExerciseId, disabled: selecting || loading}} disabled={selecting || loading} onPress={() => {void select(exercise.id);}} style={[styles.option, exercise.id === selectedExerciseId && styles.selected]}>
-                  <Image source={require('../assets/exercise-option.png')} style={styles.icon} />
+                  <Image source={require('../assets/strength/option.png')} style={styles.icon} />
                   <View style={styles.info}>
                     <Text style={styles.name}>{exercise.name}</Text>
                     <Text style={styles.description}>{exercise.description}</Text>
                   </View>
-                  {exercise.id === selectedExerciseId ? <Image source={require('../assets/exercise-selected.png')} style={styles.icon} /> : <View style={styles.unselected} />}
+                  {exercise.id === selectedExerciseId ? <Image source={require('../assets/strength/selected.png')} style={styles.icon} /> : <View style={styles.unselected} />}
                 </Pressable>
               ))}
             </View>

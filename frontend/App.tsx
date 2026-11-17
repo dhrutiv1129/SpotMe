@@ -14,13 +14,13 @@ import {
 import { Button, Sheet } from "./src/components/WorkoutControls";
 import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
 import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
+import {StrengthProgressScreen} from "./src/screens/StrengthProgressScreen";
 import { AlternativesModel } from "./src/components/AlternativesModel";
 import { ExerciseGuideScreen } from "./src/screens/ExerciseGuideScreen";
 import { api, ApiError, restoreToken, storeToken } from "./src/beta/api";
 import type {
   Alternative,
   Exercise,
-  Progress,
   User,
   Workout,
 } from "./src/beta/api";
@@ -42,6 +42,7 @@ type Screen =
   | "guide"
   | "history"
   | "detail"
+  | "strengthDetail"
   | "progress"
   | "progressHome"
   | "profile";
@@ -70,7 +71,7 @@ export default function App() {
   const [reps, setReps] = useState("");
   const [history, setHistory] = useState<Workout[]>([]);
   const [detail, setDetail] = useState<Workout | null>(null);
-  const [progress, setProgress] = useState<Progress | null>(null);
+  const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
   const [available, setAvailable] = useState<string[]>([
@@ -121,6 +122,7 @@ export default function App() {
     setTrainLoading(true);
     setTrainError("");
     setCreation(null);
+    setStrengthExerciseId(null);
     setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
@@ -203,7 +205,7 @@ export default function App() {
     if (next === "home") setActiveTab("train");
     else if (["create", "workout", "review", "alternatives", "guide"].includes(next))
       setActiveTab("train");
-    else if (next === "progress" || next === "progressHome") setActiveTab("progress");
+    else if (next === "progress" || next === "progressHome" || next === "strengthDetail") setActiveTab("progress");
     else if (next === "profile") setActiveTab("you");
     setError("");
     setNotice("");
@@ -365,9 +367,13 @@ export default function App() {
     });
   }
   async function showProgress(id: number) {
+    setStrengthExerciseId(id);
+    navigate("progress");
+  }
+  async function openStrengthWorkout(id: number) {
     await run(async () => {
-      setProgress(await api<Progress>(`/progress/${id}`));
-      navigate("progress");
+      setDetail(await api<Workout>(`/workouts/${id}`));
+      navigate("strengthDetail");
     });
   }
   async function logout() {
@@ -380,7 +386,7 @@ export default function App() {
       setCatalog([]);
       setHistory([]);
       setDetail(null);
-      setProgress(null);
+      setStrengthExerciseId(null);
       setDraft(newDraft());
     });
   }
@@ -518,20 +524,7 @@ export default function App() {
         <Button label="Sign out" variant="text" disabled={busy} onPress={() => { void logout(); }} />
       </>
     );
-  else if (screen === "progressHome")
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>Small steps. Real strength.</Text>
-        <Text style={styles.body}>Choose an exercise to see your estimated one-rep max, training volume and personal records.</Text>
-        <View style={styles.wrap}>
-          {catalog.map(e => (
-            <Chip key={e.id} label={e.name} disabled={busy} onPress={() => { void showProgress(e.id); }} />
-          ))}
-        </View>
-        {!catalog.length && <Text style={styles.body}>No exercises are available yet.</Text>}
-        <Button label="Workout history" variant="secondary" onPress={() => { void showHistory(); }} />
-      </>
-    );
+  else if (screen === "progressHome" || screen === "progress") content = null;
   else if (screen === "workout" || screen === "review") content = null;
   else if (screen === "history")
     content = (
@@ -565,7 +558,7 @@ export default function App() {
         ))}
       </>
     );
-  else if (screen === "detail" && detail)
+  else if ((screen === "detail" || screen === "strengthDetail") && detail)
     content = (
       <>
         <Text accessibilityRole="header" style={styles.title}>
@@ -599,75 +592,17 @@ export default function App() {
         />
       </>
     );
-  else if (screen === "progress" && progress) {
-    const max = Math.max(
-      ...progress.points.map((p) => Number(p.estimatedOneRepMax || 0)),
-      1,
-    );
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          {exerciseName(progress.exerciseId)}
-        </Text>
-        <Text style={styles.heading}>Your progress</Text>
-        {!progress.points.length && (
-          <Text style={styles.body}>
-            No logged sets yet. Save a workout with this exercise to start
-            tracking progress.
-          </Text>
-        )}
-        {progress.records && (
-          <View style={styles.hero}>
-            <Text style={styles.heroTitle}>Personal records</Text>
-            <Text style={styles.heroText}>
-              Heaviest weight: {number(progress.records.maxWeight.value)} lb
-            </Text>
-            <Text style={styles.heroText}>
-              Best estimated 1RM:{" "}
-              {number(progress.records.estimatedOneRepMax?.value)} lb
-            </Text>
-            <Text style={styles.heroText}>
-              Best session volume:{" "}
-              {number(progress.records.maxWorkoutVolume.value)} lb
-            </Text>
-          </View>
-        )}
-        <Text style={styles.body}>
-          Estimated one-rep max over time. Zero external load has no estimate.
-        </Text>
-        {progress.points.map((p) => (
-          <View key={p.workoutId} style={styles.card}>
-            <Text style={styles.heading}>
-              {p.date} · Workout {p.workoutId}
-            </Text>
-            <View
-              accessibilityLabel={`Estimated one rep max ${number(p.estimatedOneRepMax)} pounds`}
-              style={styles.track}
-            >
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    width: `${Math.max(0, (Number(p.estimatedOneRepMax || 0) / max) * 100)}%`,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.body}>
-              Estimated 1RM: {number(p.estimatedOneRepMax)} lb · Volume:{" "}
-              {number(p.volume)} lb
-            </Text>
-            <Text style={styles.small}>
-              Change from previous session: {number(p.oneRepMaxChange)} lb
-            </Text>
-          </View>
-        ))}
-      </>
-    );
-  } else content = null;
+  else content = null;
 
   const specialized =
-    screen === "workout" ? (
+    screen === "progressHome" || screen === "progress" ? (
+      <StrengthProgressScreen key={user.id} catalog={catalog} exerciseId={strengthExerciseId}
+        onSelectExercise={setStrengthExerciseId}
+        onViewHistory={() => {void showHistory();}}
+        onViewSession={id => {void openStrengthWorkout(id);}}
+        onTrain={() => navigate("home")}
+        onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
+    ) : screen === "workout" ? (
       <ActiveWorkoutScreen key={draft.key} draft={draft} catalog={catalog} selected={selected}
         inputs={sessionInputs.current[draft.key] ||= {...draft.session?.inputs}}
         onSelect={setSelected} onChange={changeActiveWorkout}
@@ -753,7 +688,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {!["home", "create", "workout", "review"].includes(screen) && <View style={styles.nav}>
+      {!["home", "create", "workout", "review", "progressHome", "progress"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}

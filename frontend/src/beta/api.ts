@@ -36,9 +36,9 @@ export interface Progress {
     oneRepMaxChange: number | null;
   }>;
   records: {
-    maxWeight: { value: number; date: string };
-    estimatedOneRepMax: { value: number; date: string } | null;
-    maxWorkoutVolume: { value: number; date: string };
+    maxWeight: { value: number; date: string; workoutId?: number };
+    estimatedOneRepMax: { value: number; date: string; workoutId?: number } | null;
+    maxWorkoutVolume: { value: number; date: string; workoutId?: number };
   } | null;
 }
 export interface Alternative {

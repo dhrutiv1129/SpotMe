@@ -13,7 +13,8 @@ export interface WorkoutDetailView {
   volumeLabel: string;
   summaryLabel: string;
   unit: 'kg' | 'lb';
-  comparison: {
+  dataNote?: string;
+  comparison?: {
     title: string;
     volumeLabel: string;
     volumeDescription: string;
@@ -27,6 +28,7 @@ export interface WorkoutDetailView {
     volumeLabel: string;
     substitutionLabel?: string;
     loadLabel: string;
+    canViewStrength?: boolean;
     completedSets: LoggedSet[];
   }>;
 }
@@ -37,14 +39,15 @@ interface Props {
   backLabel?: string;
   onViewHistory?: () => void;
   onViewStrength?: () => void;
+  onViewExercise?: (exerciseId: number) => void;
 }
 
 /** Shows the saved workout and completed sets. */
-export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewStrength}: Props) {
+export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewStrength, onViewExercise}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
-        <Image source={require('../assets/back.png')} style={styles.backIcon} />
+        <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
         <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
@@ -59,7 +62,8 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
         </View>
         <Text style={styles.heroCaption}>{workout.summaryLabel}</Text>
       </View>
-      <View style={styles.section}>
+      {!!workout.dataNote && <Text style={styles.caption}>{workout.dataNote}</Text>}
+      {workout.comparison && <View style={styles.section}>
         <Text style={styles.sectionTitle}>{workout.comparison.title}</Text>
         <View style={styles.comparison}>
           <View style={styles.metrics}>
@@ -68,7 +72,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
           </View>
           <Text style={styles.bestSet}>{workout.comparison.bestSetMessage}</Text>
         </View>
-      </View>
+      </View>}
       <View style={styles.log}>
         <Text style={styles.sectionTitle}>Actual sets</Text>
         {workout.exercises.map((exercise) => (
@@ -91,6 +95,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
                 <Text style={[styles.setValue, styles.reps]}>{set.reps}</Text>
               </View>
             ))}
+            {!!onViewExercise && exercise.canViewStrength !== false && <Button label={`See ${exercise.name} progress`} variant="text" onPress={() => onViewExercise(Number(exercise.id))} />}
           </View>
         ))}
       </View>
@@ -102,7 +107,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},
   backIcon: {width: 22, height: 22},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},

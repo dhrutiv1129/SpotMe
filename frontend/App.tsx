@@ -15,6 +15,8 @@ import { Button, Sheet } from "./src/components/WorkoutControls";
 import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
 import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
 import {StrengthProgressScreen} from "./src/screens/StrengthProgressScreen";
+import {WorkoutHistoryFlow} from "./src/navigation/WorkoutHistoryFlow";
+import {newHistoryBrowseState} from "./src/state/workoutHistory";
 import { AlternativesModel } from "./src/components/AlternativesModel";
 import { ExerciseGuideScreen } from "./src/screens/ExerciseGuideScreen";
 import { api, ApiError, restoreToken, storeToken } from "./src/beta/api";
@@ -69,8 +71,8 @@ export default function App() {
   const [selected, setSelected] = useState<number | null>(null);
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
-  const [history, setHistory] = useState<Workout[]>([]);
-  const [detail, setDetail] = useState<Workout | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const [historyBrowseState, setHistoryBrowseState] = useState(newHistoryBrowseState);
   const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
@@ -123,6 +125,8 @@ export default function App() {
     setTrainError("");
     setCreation(null);
     setStrengthExerciseId(null);
+    setDetailId(null);
+    setHistoryBrowseState(newHistoryBrowseState());
     setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
@@ -347,7 +351,7 @@ export default function App() {
         throw failure;
       }
       await updateDraft(resetWorkout(current));
-      setDetail(saved);
+      setDetailId(saved.id);
       setSelected(null);
       navigate("detail");
       setNotice("Workout saved.");
@@ -361,20 +365,15 @@ export default function App() {
     } finally {busyRef.current = false; setBusy(false);}
   }
   async function showHistory() {
-    await run(async () => {
-      setHistory(await api<Workout[]>("/workouts"));
-      navigate("history");
-    });
+    navigate("history");
   }
   async function showProgress(id: number) {
     setStrengthExerciseId(id);
     navigate("progress");
   }
   async function openStrengthWorkout(id: number) {
-    await run(async () => {
-      setDetail(await api<Workout>(`/workouts/${id}`));
-      navigate("strengthDetail");
-    });
+    setDetailId(id);
+    navigate("strengthDetail");
   }
   async function logout() {
     await run(async () => {
@@ -384,8 +383,7 @@ export default function App() {
       setUser(null);
       setReady(false);
       setCatalog([]);
-      setHistory([]);
-      setDetail(null);
+      setDetailId(null);
       setStrengthExerciseId(null);
       setDraft(newDraft());
     });
@@ -526,76 +524,19 @@ export default function App() {
     );
   else if (screen === "progressHome" || screen === "progress") content = null;
   else if (screen === "workout" || screen === "review") content = null;
-  else if (screen === "history")
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          Every session, saved.
-        </Text>
-        {!history.length && (
-          <Text style={styles.body}>
-            No workouts yet. Your first saved workout will appear here.
-          </Text>
-        )}
-        {history.map((w) => (
-          <View key={w.id} style={styles.card}>
-            <Text style={styles.heading}>{w.date}</Text>
-            <Text style={styles.body}>
-              {w.exercises.map((e) => exerciseName(e.exerciseId)).join(", ")} ·{" "}
-              {number(volume(w))} lb volume
-            </Text>
-            <Button
-              label={`View workout ${w.id}`}
-              variant="text"
-              onPress={() => {
-                void run(async () => {
-                  setDetail(await api<Workout>(`/workouts/${w.id}`));
-                  navigate("detail");
-                });
-              }}
-            />
-          </View>
-        ))}
-      </>
-    );
-  else if ((screen === "detail" || screen === "strengthDetail") && detail)
-    content = (
-      <>
-        <Text accessibilityRole="header" style={styles.title}>
-          Workout saved
-        </Text>
-        <Text style={styles.body}>
-          {detail.date} · {number(volume(detail))} lb volume
-        </Text>
-        {detail.exercises.map((e) => (
-          <View key={e.exerciseId} style={styles.card}>
-            <Text style={styles.heading}>{exerciseName(e.exerciseId)}</Text>
-            {e.sets.map((s, i) => (
-              <Text key={i} style={styles.body}>
-                Set {i + 1}: {s.reps} reps × {number(s.weight)} lb
-              </Text>
-            ))}
-            <Button
-              label={`See progress for ${exerciseName(e.exerciseId)}`}
-              variant="text"
-              onPress={() => {
-                void showProgress(e.exerciseId);
-              }}
-            />
-          </View>
-        ))}
-        <Button
-          label="View workout history"
-          onPress={() => {
-            void showHistory();
-          }}
-        />
-      </>
-    );
   else content = null;
 
   const specialized =
-    screen === "progressHome" || screen === "progress" ? (
+    screen === "history" || screen === "detail" || screen === "strengthDetail" ? (
+      <WorkoutHistoryFlow key={user.id} catalog={catalog}
+        browseState={historyBrowseState} onBrowseStateChange={setHistoryBrowseState}
+        initialWorkoutId={screen === "history" ? null : detailId}
+        focusExerciseId={screen === "strengthDetail" ? strengthExerciseId : null}
+        backLabel={activeTab === "you" ? "You" : activeTab === "progress" ? "Strength" : "Train"}
+        onBack={() => navigate(activeTab === "you" ? "profile" : activeTab === "progress" ? "progressHome" : "home")}
+        onTrain={() => navigate("home")} onViewStrength={id => {void showProgress(id);}}
+        onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
+    ) : screen === "progressHome" || screen === "progress" ? (
       <StrengthProgressScreen key={user.id} catalog={catalog} exerciseId={strengthExerciseId}
         onSelectExercise={setStrengthExerciseId}
         onViewHistory={() => {void showHistory();}}
@@ -688,7 +629,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {!["home", "create", "workout", "review", "progressHome", "progress"].includes(screen) && <View style={styles.nav}>
+      {!["home", "create", "workout", "review", "progressHome", "progress", "history", "detail", "strengthDetail"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}
@@ -716,7 +657,7 @@ export default function App() {
                 setCreation({name: draft.plan.name, exercises: draft.plan.targets.map(item => ({exerciseId: item.exerciseId, sets: String(item.sets), reps: String(item.reps)}))});
                 navigate("create");
               } else if (trainTemplate) {
-                setDetail(trainTemplate);
+                setDetailId(trainTemplate.id);
                 navigate("detail");
               }
             }}

@@ -18,14 +18,15 @@ interface Props {
   selectedDate?: string | null;
   onViewStrength: () => void;
   onViewHistory: () => void;
-  onEditGoal: () => void;
+  onEditGoal?: () => void;
+  state?: React.ReactNode;
   onChangeMonth: (monthId: string) => void;
   onViewDay: (date: string, sessionIds: readonly string[]) => void;
 }
 
 /** Shows the calendar, weekly goal and streak returned by the backend. */
 export function ConsistencyScreen({
-  consistency, selectedDate, onViewStrength, onViewHistory, onEditGoal, onChangeMonth, onViewDay,
+  consistency, selectedDate, onViewStrength, onViewHistory, onEditGoal, onChangeMonth, onViewDay, state,
 }: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -44,6 +45,7 @@ export function ConsistencyScreen({
           <Text style={styles.selectedTabText}>Consistency</Text>
         </View>
       </View>
+      {state || <>
       <View style={styles.metrics}>
         <View style={styles.metric}>
           <View style={styles.metricHeading}>
@@ -62,18 +64,19 @@ export function ConsistencyScreen({
       </View>
       <View style={styles.weeklyGoal}>
         <Text style={styles.weeklyLabel}>{consistency.weeklyProgressLabel}</Text>
-        <Pressable accessibilityRole="button" onPress={onEditGoal} style={styles.linkButton}>
+        {onEditGoal && <Pressable accessibilityRole="button" onPress={onEditGoal} style={styles.linkButton}>
           <Text style={styles.editLink}>Edit goal</Text>
-        </Pressable>
+        </Pressable>}
       </View>
       <CalendarView calendar={consistency.calendar} selectedDate={selectedDate} onChangeMonth={onChangeMonth} onViewDay={onViewDay} />
+      </>}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
   headerLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   linkButton: {minHeight: 44, justifyContent: 'center'},

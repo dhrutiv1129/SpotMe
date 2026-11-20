@@ -14,6 +14,8 @@ import {
 import { Button, Sheet } from "./src/components/WorkoutControls";
 import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
 import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
+import {ConsistencyCalendarScreen} from "./src/screens/ConsistencyCalendarScreen";
+import {currentHistoryMonth} from "./src/state/workoutHistory";
 import {StrengthProgressScreen} from "./src/screens/StrengthProgressScreen";
 import {WorkoutHistoryFlow} from "./src/navigation/WorkoutHistoryFlow";
 import {newHistoryBrowseState} from "./src/state/workoutHistory";
@@ -45,6 +47,8 @@ type Screen =
   | "history"
   | "detail"
   | "strengthDetail"
+  | "consistencyDetail"
+  | "consistency"
   | "progress"
   | "progressHome"
   | "profile";
@@ -73,6 +77,8 @@ export default function App() {
   const [reps, setReps] = useState("");
   const [detailId, setDetailId] = useState<number | null>(null);
   const [historyBrowseState, setHistoryBrowseState] = useState(newHistoryBrowseState);
+  const [consistencyMonth, setConsistencyMonth] = useState(currentHistoryMonth);
+  const [progressOrigin, setProgressOrigin] = useState<"progressHome" | "consistency">("progressHome");
   const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
@@ -127,6 +133,8 @@ export default function App() {
     setStrengthExerciseId(null);
     setDetailId(null);
     setHistoryBrowseState(newHistoryBrowseState());
+    setConsistencyMonth(currentHistoryMonth());
+    setProgressOrigin("progressHome");
     setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
@@ -209,7 +217,7 @@ export default function App() {
     if (next === "home") setActiveTab("train");
     else if (["create", "workout", "review", "alternatives", "guide"].includes(next))
       setActiveTab("train");
-    else if (next === "progress" || next === "progressHome" || next === "strengthDetail") setActiveTab("progress");
+    else if (next === "progress" || next === "progressHome" || next === "strengthDetail" || next === "consistency" || next === "consistencyDetail") setActiveTab("progress");
     else if (next === "profile") setActiveTab("you");
     setError("");
     setNotice("");
@@ -365,13 +373,16 @@ export default function App() {
     } finally {busyRef.current = false; setBusy(false);}
   }
   async function showHistory() {
+    setProgressOrigin(screen === "consistency" ? "consistency" : "progressHome");
     navigate("history");
   }
   async function showProgress(id: number) {
     setStrengthExerciseId(id);
+    setProgressOrigin("progressHome");
     navigate("progress");
   }
   async function openStrengthWorkout(id: number) {
+    setProgressOrigin("progressHome");
     setDetailId(id);
     navigate("strengthDetail");
   }
@@ -527,18 +538,24 @@ export default function App() {
   else content = null;
 
   const specialized =
-    screen === "history" || screen === "detail" || screen === "strengthDetail" ? (
+    screen === "history" || screen === "detail" || screen === "strengthDetail" || screen === "consistencyDetail" ? (
       <WorkoutHistoryFlow key={user.id} catalog={catalog}
         browseState={historyBrowseState} onBrowseStateChange={setHistoryBrowseState}
         initialWorkoutId={screen === "history" ? null : detailId}
         focusExerciseId={screen === "strengthDetail" ? strengthExerciseId : null}
-        backLabel={activeTab === "you" ? "You" : activeTab === "progress" ? "Strength" : "Train"}
-        onBack={() => navigate(activeTab === "you" ? "profile" : activeTab === "progress" ? "progressHome" : "home")}
+        backLabel={activeTab === "you" ? "You" : activeTab === "progress" ? progressOrigin === "consistency" ? "Consistency" : "Strength" : "Train"}
+        onBack={() => navigate(activeTab === "you" ? "profile" : activeTab === "progress" ? progressOrigin : "home")}
         onTrain={() => navigate("home")} onViewStrength={id => {void showProgress(id);}}
+        onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
+    ) : screen === "consistency" ? (
+      <ConsistencyCalendarScreen key={user.id} month={consistencyMonth} onChangeMonth={setConsistencyMonth}
+        onViewStrength={() => navigate("progressHome")} onViewHistory={() => {void showHistory();}}
+        onViewWorkout={id => {setDetailId(id); setProgressOrigin("consistency"); navigate("consistencyDetail");}}
         onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
     ) : screen === "progressHome" || screen === "progress" ? (
       <StrengthProgressScreen key={user.id} catalog={catalog} exerciseId={strengthExerciseId}
         onSelectExercise={setStrengthExerciseId}
+        onViewConsistency={() => navigate("consistency")}
         onViewHistory={() => {void showHistory();}}
         onViewSession={id => {void openStrengthWorkout(id);}}
         onTrain={() => navigate("home")}
@@ -629,7 +646,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {!["home", "create", "workout", "review", "progressHome", "progress", "history", "detail", "strengthDetail"].includes(screen) && <View style={styles.nav}>
+      {!["home", "create", "workout", "review", "progressHome", "progress", "history", "detail", "strengthDetail", "consistency", "consistencyDetail"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}

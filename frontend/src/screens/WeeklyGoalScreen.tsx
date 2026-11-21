@@ -1,5 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
+import DayCheck from '../assets/goal/day-check.svg';
+import Calendar from '../assets/goal/calendar.svg';
+import SaveCheck from '../assets/goal/save-check.svg';
 import {colors} from '../theme';
 
 export interface WeeklyGoalView {
@@ -62,7 +66,7 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to Consistency" disabled={saving} onPress={close} style={styles.back}>
-          <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
+          <Back accessible={false} />
           <Text style={styles.headerLabel}>Edit weekly goal</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={saving} onPress={close} style={styles.cancel}>
@@ -79,7 +83,7 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
           {goal.days.map((day) => (
             <View key={day.date} accessible accessibilityLabel={day.accessibilityLabel} style={styles.day}>
               <View style={[styles.circle, day.state === 'completed' && styles.completed, day.state === 'rest' && styles.rest]}>
-                {day.showCheck ? <Image source={require('../assets/goal-day-check.png')} style={styles.dayCheck} /> : (
+                {day.showCheck ? <DayCheck accessible={false} /> : (
                   <Text style={[styles.date, day.state === 'completed' && styles.lightText, day.state === 'rest' && styles.restText]}>{day.dateLabel}</Text>
                 )}
               </View>
@@ -104,13 +108,13 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
         </View>
       </View>
       <View style={styles.guidance}>
-        <Image source={require('../assets/goal-calendar.png')} style={styles.calendarIcon} />
+        <Calendar accessible={false} />
         <Text style={styles.effectiveDate}>{goal?.effectiveDateLabel || 'Start date unavailable'}</Text>
       </View>
       {!onSave && <Text style={styles.caption}>Goal saving is not available yet. Your selection will not be saved.</Text>}
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       <Pressable accessibilityRole="button" accessibilityState={{disabled: !canSave, busy: saving}} disabled={!canSave} onPress={() => {void save();}} style={[styles.save, !canSave && styles.disabled]}>
-        {saving ? <ActivityIndicator color={colors.surface} /> : <Image source={require('../assets/goal-save-check.png')} style={styles.saveCheck} />}
+        {saving ? <ActivityIndicator color={colors.surface} /> : <SaveCheck accessible={false} />}
         <Text style={styles.saveLabel}>{saving ? 'Saving goal…' : error ? 'Retry saving goal' : 'Save goal'}</Text>
       </Pressable>
     </ScrollView>
@@ -122,7 +126,6 @@ const styles = StyleSheet.create({
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
   back: {flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, flexShrink: 1},
-  backIcon: {width: 22, height: 22},
   headerLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   cancel: {minHeight: 44, justifyContent: 'center'},
   cancelLabel: {color: colors.green, fontSize: 13},
@@ -138,7 +141,6 @@ const styles = StyleSheet.create({
   rest: {backgroundColor: '#D6E4D0', borderColor: '#D6E4D0'},
   date: {color: colors.muted, fontSize: 11},
   restText: {color: colors.green},
-  dayCheck: {width: 14, height: 14},
   weekday: {color: colors.muted, fontSize: 10},
   caption: {color: colors.muted, fontSize: 12, lineHeight: 18},
   label: {color: colors.ink, fontSize: 15, fontWeight: '700'},
@@ -151,10 +153,8 @@ const styles = StyleSheet.create({
   choiceLabel: {color: colors.ink, fontSize: 15, fontWeight: '600'},
   lightText: {color: colors.surface},
   guidance: {backgroundColor: colors.pale, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12},
-  calendarIcon: {width: 20, height: 20},
   effectiveDate: {flex: 1, color: colors.ink, fontSize: 14, fontWeight: '700'},
   save: {minHeight: 54, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10},
-  saveCheck: {width: 18, height: 18},
   saveLabel: {color: colors.surface, fontSize: 15, fontWeight: '700'},
   disabled: {opacity: 0.45},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},

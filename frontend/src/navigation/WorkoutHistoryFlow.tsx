@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import Search from '../assets/history/search.svg';
 import { api, ApiError } from '../beta/api';
 import type { Exercise, Progress, Workout } from '../beta/api';
 import { WorkoutHistoryFilters } from '../components/WorkoutHistoryFilters';
@@ -193,10 +194,7 @@ export function WorkoutHistoryFlow({
     history.sections.length === 0 ? (
       <View style={styles.empty}>
         <View style={styles.emptyIcon}>
-          <Image
-            source={require('../assets/history/search.png')}
-            style={styles.search}
-          />
+          <Search accessible={false} />
         </View>
         <Text accessibilityRole="header" style={styles.emptyTitle}>
           {workouts.length ? 'No matching workouts' : 'Your story starts here.'}
@@ -348,7 +346,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
   },
-  search: { width: 30, height: 30 },
   emptyTitle: {
     fontSize: 27,
     fontWeight: '700',

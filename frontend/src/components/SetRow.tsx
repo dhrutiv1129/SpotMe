@@ -1,5 +1,7 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import Check from '../assets/workout/check.svg';
+import Plus from '../assets/workout/plus.svg';
 import {colors} from '../theme';
 
 interface BaseProps {
@@ -41,7 +43,7 @@ export function SetRow(props: LoggedProps | DraftProps) {
         <Text style={styles.value}>{props.weight}</Text>
         <Text style={styles.value}>{props.reps}</Text>
         <View style={styles.check}>
-          <Image source={require('../assets/workout/check.png')} style={styles.smallIcon} />
+          <Check accessible={false} />
         </View>
       </Pressable>
     );
@@ -72,7 +74,7 @@ export function SetRow(props: LoggedProps | DraftProps) {
         style={[styles.input, !!props.repsError && styles.invalid]}
       />
       <Pressable accessibilityRole="button" accessibilityLabel={`Log set ${props.number}`} accessibilityState={{disabled: props.disabled || !props.canLog}} disabled={props.disabled || !props.canLog} onPress={props.onLog} style={styles.add}>
-        <Image source={require('../assets/workout/plus.png')} style={styles.smallIcon} />
+        <Plus accessible={false} />
       </Pressable>
     </View>
     {!!props.weightError && <Text accessibilityRole="alert" style={styles.error}>{props.weightError}</Text>}
@@ -108,7 +110,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   checkText: {fontSize: 22, color: colors.surface},
-  smallIcon: {width: 18, height: 18},
   fieldGroup: {gap: 6},
   input: {flex: 1, minWidth: 0, height: 44, backgroundColor: colors.background, color: colors.ink, borderRadius: 8, borderWidth: 1, borderColor: colors.border, textAlign: 'center', fontSize: 18, paddingHorizontal: 4},
   invalid: {borderColor: colors.danger},

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import {
   validateWorkouts,
 } from '../state/workoutHistory';
 import { colors } from '../theme';
+import Close from '../assets/history/close.svg';
 import { ConsistencyScreen } from './ConsistencyScreen';
 import { WeeklyGoalScreen } from './WeeklyGoalScreen';
 
@@ -203,10 +203,7 @@ export function ConsistencyCalendarScreen({
               onPress={() => setSelectedDate(null)}
               style={styles.close}
             >
-              <Image
-                source={require('../assets/history/close.png')}
-                style={styles.closeIcon}
-              />
+              <Close accessible={false} />
             </Pressable>
           }
         >
@@ -266,5 +263,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeIcon: { width: 22, height: 22 },
 });

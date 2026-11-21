@@ -114,19 +114,6 @@ export function ProgressScreen({
         ) : (
           <Text style={styles.headerLabel}>Your progress</Text>
         )}
-        {(single || empty) && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View saved workout dates"
-            onPress={onViewHistory}
-            style={styles.historyLink}
-          >
-            <Image
-              source={require('../assets/strength/calendar.png')}
-              style={styles.headerIcon}
-            />
-          </Pressable>
-        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="View workout history"

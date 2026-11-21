@@ -600,6 +600,7 @@ export default function App() {
         availableEquipment={available}
         selectedExerciseId={selectedAlternativeId}
         onSelectExercise={id => {setSelectedAlternativeId(id); setError("");}}
+        onEditEquipment={() => {if (!busyRef.current) setEditingEquipment(true);}}
         alternatives={alternatives.map((a, i) => ({
           id: String(a.exerciseId),
           rank: i + 1,
@@ -618,7 +619,6 @@ export default function App() {
           navigate("guide");
         }}
       />
-      <Button label="Edit equipment filters" variant="text" disabled={busy} onPress={() => setEditingEquipment(true)} />
       </View>
     ) : screen === "guide" && guide ? (
       <ExerciseGuideScreen

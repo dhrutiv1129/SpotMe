@@ -19,6 +19,7 @@ import {
 } from '../state/workoutHistory';
 import { colors } from '../theme';
 import { ConsistencyScreen } from './ConsistencyScreen';
+import { WeeklyGoalScreen } from './WeeklyGoalScreen';
 
 function localDate(value: Date) {
   return `${currentHistoryMonth(value)}-${String(value.getDate()).padStart(2, '0')}`;
@@ -108,6 +109,7 @@ export function ConsistencyCalendarScreen({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
+  const [editingGoal, setEditingGoal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const auth = useRef(onUnauthorized);
   auth.current = onUnauthorized;
@@ -136,6 +138,8 @@ export function ConsistencyCalendarScreen({
       cancelled = true;
     };
   }, [load, reload]);
+
+  if (editingGoal) return <WeeklyGoalScreen goal={null} onClose={() => setEditingGoal(false)} />;
 
   const { calendar, saved, count } = buildWorkoutCalendar(workouts, month);
   const dayWorkouts = saved
@@ -176,6 +180,7 @@ export function ConsistencyCalendarScreen({
         }}
         state={state}
         selectedDate={selectedDate}
+        onEditGoal={() => {setSelectedDate(null); setEditingGoal(true);}}
         onViewStrength={onViewStrength}
         onViewHistory={onViewHistory}
         onChangeMonth={(value) => {

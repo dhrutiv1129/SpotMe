@@ -1,5 +1,6 @@
 import React from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
 import {Button} from '../components/WorkoutControls';
 import type {LoggedSet} from '../components/ExerciseRow';
 import {colors} from '../theme';
@@ -47,7 +48,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
-        <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
+        <Back accessible={false} />
         <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
@@ -109,7 +110,6 @@ const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},
-  backIcon: {width: 22, height: 22},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   heading: {gap: 8},
   date: {color: colors.green, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase'},

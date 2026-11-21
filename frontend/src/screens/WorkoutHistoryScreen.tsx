@@ -1,5 +1,7 @@
 import React from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
+import Next from '../assets/history/next.svg';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
 
@@ -41,7 +43,7 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
-        <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
+        <Back accessible={false} />
         <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
@@ -83,7 +85,7 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
                 <Text style={styles.caption}>{session.description}</Text>
                 <Text style={[styles.caption, session.highlighted && styles.highlight]}>{session.detailLabel}</Text>
               </View>
-              <Image source={require('../assets/history/next.png')} style={styles.chevron} />
+              <Next accessible={false} />
             </Pressable>
           ))}
         </View>
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},
-  backIcon: {width: 22, height: 22},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   heading: {gap: 8},
   title: {color: colors.ink, fontSize: 32, lineHeight: 36, letterSpacing: -1.2, fontWeight: '700'},
@@ -116,5 +117,4 @@ const styles = StyleSheet.create({
   entryCopy: {flex: 1, gap: 6},
   entryTitle: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   highlight: {color: colors.green},
-  chevron: {width: 16, height: 16},
 });

@@ -86,6 +86,7 @@ export default function App() {
   const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
+  const [selectedAlternativeId, setSelectedAlternativeId] = useState<string | null>(null);
   const [available, setAvailable] = useState<string[]>([
     "bodyweight",
     "dumbbell",
@@ -134,6 +135,8 @@ export default function App() {
     setTrainLoading(true);
     setTrainError("");
     setCreation(null);
+    setSelectedAlternativeId(null);
+    setGuide(null);
     setStrengthExerciseId(null);
     setDetailId(null);
     setSavedReceipt(null);
@@ -273,6 +276,8 @@ export default function App() {
   } : null;
   const savedWorkoutCard = plannedWorkoutCard || historyWorkoutCard;
   const plannedTarget = draft.plan?.targets.find(item => item.exerciseId === selected);
+  const swapTarget = workoutTargets(draft).find(item => item.exerciseId === selected);
+  const swapSetsRemaining = swapTarget ? Math.max(0, swapTarget.sets - (draft.exercises.find(item => item.exerciseId === selected)?.sets.length || 0)) : null;
   const initials = user?.email.split("@")[0].split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "U";
 
   async function saveCreatedPlan() {
@@ -335,6 +340,7 @@ export default function App() {
         `/exercises/${exercise.id}/alternatives?equipment=${available.map(encodeURIComponent).join(",")}&beginnerOnly=${beginner}`,
       );
       setAlternatives(result);
+      setSelectedAlternativeId(id => screen === "alternatives" && result.some(item => String(item.exerciseId) === id) ? id : null);
       navigate("alternatives");
     });
   }
@@ -590,8 +596,10 @@ export default function App() {
       <View style={styles.flex}>
       <AlternativesModel
         originalExerciseName={exercise?.name || ""}
-        targetLabel={exercise?.muscleGroup || ""}
+        targetLabel={swapTarget ? `${swapTarget.sets} × ${swapTarget.reps}` : "No set target"}
         availableEquipment={available}
+        selectedExerciseId={selectedAlternativeId}
+        onSelectExercise={id => {setSelectedAlternativeId(id); setError("");}}
         alternatives={alternatives.map((a, i) => ({
           id: String(a.exerciseId),
           rank: i + 1,
@@ -601,7 +609,12 @@ export default function App() {
         }))}
         onBack={() => navigate("workout")}
         onViewGuide={(id) => {
-          setGuide(catalog.find((e) => e.id === Number(id)) || null);
+          const nextGuide = catalog.find(item => String(item.id) === id);
+          if (!nextGuide || !alternatives.some(item => String(item.exerciseId) === id)) {
+            setError("This exercise guide is unavailable. Choose another alternative.");
+            return;
+          }
+          setGuide(nextGuide);
           navigate("guide");
         }}
       />
@@ -613,7 +626,7 @@ export default function App() {
           exerciseId: String(guide.id),
           name: guide.name,
           originalExerciseName: exercise?.name || "",
-          targetLabel: "Use a comfortable load and range of motion.",
+          targetLabel: swapTarget ? `${swapSetsRemaining} remaining sets × ${swapTarget.reps} reps` : "Choose sets and reps in your workout.",
           loadLabel: "All logged weight is external load in lb.",
           cues: [{ id: "instructions", text: guide.instructions }],
         }}

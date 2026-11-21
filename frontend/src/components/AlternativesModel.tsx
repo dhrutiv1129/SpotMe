@@ -21,12 +21,13 @@ interface Props {
   onBack: () => void;
 }
 
-/** Shows alternatives in the order returned by the backend. */
+/** Shows alternatives in the order returned by the backend.*/
 export function AlternativesModel({
   originalExerciseName, targetLabel, availableEquipment, alternatives,
-  onViewGuide, onBack,
+  onViewGuide, onBack, selectedExerciseId, onSelectExercise,
 }: Props) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
+  const selectedId = selectedExerciseId === undefined ? localSelectedId : selectedExerciseId;
   const selected = alternatives.find((exercise) => exercise.id === selectedId);
 
   return (
@@ -54,7 +55,7 @@ export function AlternativesModel({
           accessibilityRole="radio"
           accessibilityState={{checked: exercise.id === selectedId}}
           accessibilityLabel={`${exercise.rank}. ${exercise.name}, ${exercise.difficulty}`}
-          onPress={() => setSelectedId(exercise.id)}
+          onPress={() => {setLocalSelectedId(exercise.id); onSelectExercise?.(exercise.id);}}
           style={[styles.card, exercise.id === selectedId && styles.selected]}
         >
           {!!exercise.imageUri && <Image source={{uri: exercise.imageUri}} style={styles.image} accessibilityIgnoresInvertColors />}

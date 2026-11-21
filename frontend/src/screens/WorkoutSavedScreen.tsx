@@ -1,5 +1,9 @@
 import React from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
+import Trophy from '../assets/saved/trophy.svg';
+import Flame from '../assets/saved/flame.svg';
+import Calendar from '../assets/saved/calendar.svg';
 import type {Workout} from '../beta/api';
 import {Button} from '../components/WorkoutControls';
 import {validateWorkouts} from '../state/workoutHistory';
@@ -56,11 +60,11 @@ export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Pr
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" accessibilityLabel="Back to Train" onPress={onReturnToTrain} style={styles.headerBack}>
-        <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
+        <Back accessible={false} />
         <Text style={styles.header}>Workout saved</Text>
       </Pressable>
       <View style={styles.hero}>
-        <View style={styles.trophy}><Image source={require('../assets/saved/trophy.png')} style={styles.trophyIcon} /></View>
+        <View style={styles.trophy}><Trophy accessible={false} /></View>
         <Text style={styles.eyebrow}>SAVED TO YOUR HISTORY</Text>
         <Text accessibilityRole="header" style={styles.title}>
           You showed up.{'\n'}That’s a win.
@@ -93,12 +97,12 @@ export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Pr
       </View>
       <View style={styles.highlights}>
         <View style={styles.highlight}>
-          <Image source={require('../assets/saved/flame.png')} style={styles.milestoneIcon} />
+          <Flame accessible={false} />
           <Text style={styles.value}>{receipt.streakLabel}</Text>
           <Text style={styles.caption}>{receipt.streakDescription}</Text>
         </View>
         <View style={styles.highlight}>
-          <Image source={require('../assets/saved/calendar.png')} style={styles.milestoneIcon} />
+          <Calendar accessible={false} />
           <Text style={styles.value}>{receipt.monthlyWorkoutsLabel}</Text>
           <Text style={styles.caption}>{receipt.monthlyWorkoutsDescription}</Text>
         </View>
@@ -113,11 +117,9 @@ const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   headerBack: {flexDirection: 'row', gap: 12, alignItems: 'center', minHeight: 44},
-  backIcon: {width: 22, height: 22},
   header: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 24, alignItems: 'center', gap: 16},
   trophy: {backgroundColor: colors.lime, borderRadius: 24, width: 72, height: 72, alignItems: 'center', justifyContent: 'center'},
-  trophyIcon: {width: 34, height: 34},
   eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3},
   title: {color: colors.surface, fontSize: 32, lineHeight: 35.2, fontWeight: '700', textAlign: 'center', letterSpacing: -1.2},
   heroCaption: {color: '#C1CCBD', fontSize: 14, textAlign: 'center'},
@@ -135,5 +137,4 @@ const styles = StyleSheet.create({
   weekMessage: {color: colors.green, fontSize: 12, lineHeight: 18},
   highlights: {flexDirection: 'row', gap: 12},
   highlight: {flex: 1, backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 8},
-  milestoneIcon: {width: 22, height: 22},
 });

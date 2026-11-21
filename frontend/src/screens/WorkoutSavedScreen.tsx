@@ -1,6 +1,8 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import type {Workout} from '../beta/api';
 import {Button} from '../components/WorkoutControls';
+import {validateWorkouts} from '../state/workoutHistory';
 import {colors} from '../theme';
 
 export interface SavedWorkoutReceipt {
@@ -19,6 +21,28 @@ export interface SavedWorkoutReceipt {
   streakDescription: string;
   monthlyWorkoutsLabel: string;
   monthlyWorkoutsDescription: string;
+  dataNote?: string;
+}
+
+// Use the confirmed saved sets and leave missing totals unavailable
+export function buildSavedWorkoutReceipt(workout: Workout): SavedWorkoutReceipt {
+  validateWorkouts([workout]);
+  const exercises = workout.exercises.filter(exercise => exercise.sets.length > 0);
+  if (!exercises.length) throw new Error('Your workout save has not been confirmed yet.');
+  const date = new Date(`${workout.date}T12:00:00`);
+  return {
+    status: 'saved', sessionId: String(workout.id), name: `Workout ${workout.id}`,
+    dateLabel: date.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'}),
+    durationLabel: '—', volumeLabel: '—',
+    exercisesCompleted: new Set(exercises.map(exercise => exercise.exerciseId)).size,
+    setsCompleted: exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0),
+    weeklyProgressLabel: 'Weekly goal unavailable',
+    weeklyMessage: 'Your workout is saved. Goals and streaks will appear when available.',
+    weekDays: [], streakLabel: '—', streakDescription: 'weekly goal streak · unavailable',
+    monthlyWorkoutsLabel: '—',
+    monthlyWorkoutsDescription: `${date.toLocaleDateString(undefined, {month: 'long'})} workouts · unavailable`,
+    dataNote: 'Your saved sets are ready to view. Duration and progress totals are not available yet.',
+  };
 }
 
 interface Props {
@@ -31,9 +55,12 @@ interface Props {
 export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.header}>Workout saved</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back to Train" onPress={onReturnToTrain} style={styles.headerBack}>
+        <Image source={require('../assets/history/back.png')} style={styles.backIcon} />
+        <Text style={styles.header}>Workout saved</Text>
+      </Pressable>
       <View style={styles.hero}>
-        <Text style={styles.trophy}>🏆</Text>
+        <View style={styles.trophy}><Image source={require('../assets/saved/trophy.png')} style={styles.trophyIcon} /></View>
         <Text style={styles.eyebrow}>SAVED TO YOUR HISTORY</Text>
         <Text accessibilityRole="header" style={styles.title}>
           You showed up.{'\n'}That’s a win.
@@ -41,14 +68,15 @@ export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Pr
         <Text style={styles.heroCaption}>{receipt.name} · {receipt.dateLabel}</Text>
       </View>
       <View style={styles.stats}>
-        <View style={styles.stat}><Text style={styles.value}>{receipt.durationLabel}</Text><Text style={styles.caption}>time well spent</Text></View>
+        <View style={styles.stat}><Text style={styles.value}>{receipt.durationLabel}</Text><Text style={styles.caption}>duration</Text></View>
         <View style={styles.stat}><Text style={styles.value}>{receipt.volumeLabel}</Text><Text style={styles.caption}>total volume</Text></View>
         <View style={styles.stat}><Text style={styles.value}>{receipt.exercisesCompleted}</Text><Text style={styles.caption}>exercises completed</Text></View>
         <View style={styles.stat}><Text style={styles.value}>{receipt.setsCompleted}</Text><Text style={styles.caption}>sets completed</Text></View>
       </View>
+      {!!receipt.dataNote && <Text style={styles.caption}>{receipt.dataNote}</Text>}
       <View style={styles.week}>
         <Text style={styles.weekTitle}>{receipt.weeklyProgressLabel}</Text>
-        <View style={styles.days}>
+        {receipt.weekDays.length > 0 && <View style={styles.days}>
           {receipt.weekDays.map((day) => (
             <View key={day.id} style={styles.day}>
               <Text
@@ -60,15 +88,17 @@ export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Pr
               <Text style={styles.dayLabel}>{day.label}</Text>
             </View>
           ))}
-        </View>
+        </View>}
         <Text style={styles.weekMessage}>{receipt.weeklyMessage}</Text>
       </View>
       <View style={styles.highlights}>
         <View style={styles.highlight}>
+          <Image source={require('../assets/saved/flame.png')} style={styles.milestoneIcon} />
           <Text style={styles.value}>{receipt.streakLabel}</Text>
           <Text style={styles.caption}>{receipt.streakDescription}</Text>
         </View>
         <View style={styles.highlight}>
+          <Image source={require('../assets/saved/calendar.png')} style={styles.milestoneIcon} />
           <Text style={styles.value}>{receipt.monthlyWorkoutsLabel}</Text>
           <Text style={styles.caption}>{receipt.monthlyWorkoutsDescription}</Text>
         </View>
@@ -81,18 +111,21 @@ export function WorkoutSavedScreen({receipt, onViewSession, onReturnToTrain}: Pr
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 24, paddingBottom: 28, gap: 22},
-  header: {color: colors.ink, fontSize: 15, fontWeight: '700', marginBottom: 10},
-  hero: {backgroundColor: colors.ink, borderRadius: 22, padding: 24, alignItems: 'center', gap: 18},
-  trophy: {color: colors.green, backgroundColor: colors.lime, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 10, fontSize: 36},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  headerBack: {flexDirection: 'row', gap: 12, alignItems: 'center', minHeight: 44},
+  backIcon: {width: 22, height: 22},
+  header: {color: colors.ink, fontSize: 15, fontWeight: '700'},
+  hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 24, alignItems: 'center', gap: 16},
+  trophy: {backgroundColor: colors.lime, borderRadius: 24, width: 72, height: 72, alignItems: 'center', justifyContent: 'center'},
+  trophyIcon: {width: 34, height: 34},
   eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3},
-  title: {color: colors.surface, fontSize: 32, fontWeight: '700', textAlign: 'center', letterSpacing: -0.7},
-  heroCaption: {color: '#B6C4B4', fontSize: 14, textAlign: 'center'},
-  stats: {backgroundColor: colors.surface, borderRadius: 22, padding: 20, flexDirection: 'row', flexWrap: 'wrap', rowGap: 18},
-  stat: {width: '50%', paddingRight: 8, gap: 6},
+  title: {color: colors.surface, fontSize: 32, lineHeight: 35.2, fontWeight: '700', textAlign: 'center', letterSpacing: -1.2},
+  heroCaption: {color: '#C1CCBD', fontSize: 14, textAlign: 'center'},
+  stats: {backgroundColor: colors.surface, borderRadius: 22, padding: 18, flexDirection: 'row', flexWrap: 'wrap', rowGap: 12},
+  stat: {width: '50%', paddingRight: 10, gap: 5},
   value: {color: colors.ink, fontSize: 28, fontWeight: '700', letterSpacing: -0.5},
-  caption: {color: colors.muted, fontSize: 12, lineHeight: 18},
-  week: {backgroundColor: colors.pale, borderRadius: 22, padding: 18, gap: 16},
+  caption: {color: colors.muted, fontSize: 11, lineHeight: 16},
+  week: {backgroundColor: colors.pale, borderRadius: 22, padding: 18, gap: 12},
   weekTitle: {color: colors.ink, fontSize: 14, fontWeight: '700'},
   days: {flexDirection: 'row', gap: 5},
   day: {flex: 1, alignItems: 'center', gap: 7},
@@ -101,5 +134,6 @@ const styles = StyleSheet.create({
   dayLabel: {color: colors.muted, fontSize: 10},
   weekMessage: {color: colors.green, fontSize: 12, lineHeight: 18},
   highlights: {flexDirection: 'row', gap: 12},
-  highlight: {flex: 1, backgroundColor: colors.surface, borderRadius: 22, padding: 18, gap: 10},
+  highlight: {flex: 1, backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 8},
+  milestoneIcon: {width: 22, height: 22},
 });

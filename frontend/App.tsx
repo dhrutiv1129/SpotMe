@@ -14,6 +14,8 @@ import {
 import { Button, Sheet } from "./src/components/WorkoutControls";
 import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
 import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
+import {WorkoutSavedScreen, buildSavedWorkoutReceipt} from "./src/screens/WorkoutSavedScreen";
+import type {SavedWorkoutReceipt} from "./src/screens/WorkoutSavedScreen";
 import {ConsistencyCalendarScreen} from "./src/screens/ConsistencyCalendarScreen";
 import {currentHistoryMonth} from "./src/state/workoutHistory";
 import {StrengthProgressScreen} from "./src/screens/StrengthProgressScreen";
@@ -42,6 +44,7 @@ type Screen =
   | "create"
   | "workout"
   | "review"
+  | "saved"
   | "alternatives"
   | "guide"
   | "history"
@@ -76,6 +79,7 @@ export default function App() {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [savedReceipt, setSavedReceipt] = useState<SavedWorkoutReceipt | null>(null);
   const [historyBrowseState, setHistoryBrowseState] = useState(newHistoryBrowseState);
   const [consistencyMonth, setConsistencyMonth] = useState(currentHistoryMonth);
   const [progressOrigin, setProgressOrigin] = useState<"progressHome" | "consistency">("progressHome");
@@ -132,6 +136,7 @@ export default function App() {
     setCreation(null);
     setStrengthExerciseId(null);
     setDetailId(null);
+    setSavedReceipt(null);
     setHistoryBrowseState(newHistoryBrowseState());
     setConsistencyMonth(currentHistoryMonth());
     setProgressOrigin("progressHome");
@@ -215,7 +220,7 @@ export default function App() {
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
     if (next === "home") setActiveTab("train");
-    else if (["create", "workout", "review", "alternatives", "guide"].includes(next))
+    else if (["create", "workout", "review", "saved", "alternatives", "guide"].includes(next))
       setActiveTab("train");
     else if (next === "progress" || next === "progressHome" || next === "strengthDetail" || next === "consistency" || next === "consistencyDetail") setActiveTab("progress");
     else if (next === "profile") setActiveTab("you");
@@ -358,11 +363,12 @@ export default function App() {
         if (failure instanceof ApiError && failure.status === 400) await updateDraft({...pending, pending: false});
         throw failure;
       }
+      const receipt = buildSavedWorkoutReceipt(saved);
       await updateDraft(resetWorkout(current));
       setDetailId(saved.id);
+      setSavedReceipt(receipt);
       setSelected(null);
-      navigate("detail");
-      setNotice("Workout saved.");
+      navigate("saved");
     } catch (failure) {
       if (failure instanceof ApiError && failure.status === 401) {
         await storeToken(null);
@@ -395,6 +401,7 @@ export default function App() {
       setReady(false);
       setCatalog([]);
       setDetailId(null);
+      setSavedReceipt(null);
       setStrengthExerciseId(null);
       setDraft(newDraft());
     });
@@ -538,7 +545,11 @@ export default function App() {
   else content = null;
 
   const specialized =
-    screen === "history" || screen === "detail" || screen === "strengthDetail" || screen === "consistencyDetail" ? (
+    screen === "saved" && savedReceipt ? (
+      <WorkoutSavedScreen receipt={savedReceipt}
+        onViewSession={id => {setDetailId(Number(id)); navigate("detail");}}
+        onReturnToTrain={() => navigate("home")} />
+    ) : screen === "history" || screen === "detail" || screen === "strengthDetail" || screen === "consistencyDetail" ? (
       <WorkoutHistoryFlow key={user.id} catalog={catalog}
         browseState={historyBrowseState} onBrowseStateChange={setHistoryBrowseState}
         initialWorkoutId={screen === "history" ? null : detailId}
@@ -646,7 +657,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {!["home", "create", "workout", "review", "progressHome", "progress", "history", "detail", "strengthDetail", "consistency", "consistencyDetail"].includes(screen) && <View style={styles.nav}>
+      {!["home", "create", "workout", "review", "saved", "progressHome", "progress", "history", "detail", "strengthDetail", "consistency", "consistencyDetail"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}

@@ -14,6 +14,7 @@ export interface CalendarDay {
 
 export interface WorkoutCalendar {
   monthLabel: string;
+  activityLabel?: string;
   previousMonthId: string | null;
   nextMonthId: string | null;
   weeks: Array<{id: string; days: Array<CalendarDay | null>}>;
@@ -80,9 +81,11 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
         ))}
       </View>
       <View style={styles.legend}>
-        <Text style={styles.legendText}>Activity</Text>
-        <View style={[styles.swatch, styles.light]} />
-        <View style={[styles.swatch, styles.medium]} />
+        <Text style={styles.legendText}>{calendar.activityLabel || 'Activity'}</Text>
+        {!calendar.activityLabel && <>
+          <View style={[styles.swatch, styles.light]} />
+          <View style={[styles.swatch, styles.medium]} />
+        </>}
         <View style={[styles.swatch, styles.high]} />
         <Text style={styles.legendText}>{selectedDate ? 'Selected' : 'Today'}</Text>
         <View style={styles.todayLegend} />

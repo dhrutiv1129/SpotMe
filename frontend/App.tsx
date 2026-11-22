@@ -31,10 +31,12 @@ type Screen =
   | "home"
   | "workout"
   | "review"
+  | "alternative-options"
   | "alternatives"
   | "guide"
   | "history"
   | "detail"
+  | "progress-picker"
   | "progress";
 const number = (value: number | null | undefined) =>
   value == null
@@ -65,6 +67,7 @@ export default function App() {
   const [history, setHistory] = useState<Workout[]>([]);
   const [detail, setDetail] = useState<Workout | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [showProgressHelp, setShowProgressHelp] = useState(false);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
   const [available, setAvailable] = useState<string[]>([
@@ -249,6 +252,7 @@ export default function App() {
   async function showProgress(id: number) {
     await run(async () => {
       setProgress(await api<Progress>(`/progress/${id}`));
+      setShowProgressHelp(false);
       navigate("progress");
     });
   }
@@ -410,6 +414,27 @@ export default function App() {
             void showHistory();
           }}
         />
+        <Button
+          label="See your progress"
+          variant="secondary"
+          onPress={() => navigate("progress-picker")}
+        />
+        <Button
+          label="Sign out"
+          variant="text"
+          disabled={busy}
+          onPress={() => {
+            void logout();
+          }}
+        />
+      </>
+    );
+  else if (screen === "progress-picker")
+    content = (
+      <>
+        <Text accessibilityRole="header" style={styles.title}>
+          Progress
+        </Text>
         <Text style={styles.heading}>See your progress</Text>
         <Text style={styles.body}>
           Choose an exercise to see your logged sessions and personal records.
@@ -425,14 +450,6 @@ export default function App() {
             />
           ))}
         </View>
-        <Button
-          label="Sign out"
-          variant="text"
-          disabled={busy}
-          onPress={() => {
-            void logout();
-          }}
-        />
       </>
     );
   else if (screen === "workout")
@@ -557,9 +574,7 @@ export default function App() {
                 setWeight(String(set.weight));
                 setReps(String(set.reps));
               }}
-              onSwap={() => {
-                void showAlternatives();
-              }}
+              onSwap={() => navigate("alternative-options")}
               onGuide={() => {
                 setNotice(exercise.instructions);
               }}
@@ -639,38 +654,6 @@ export default function App() {
                 />
               </View>
             )}
-            <Text style={styles.heading}>Machine unavailable?</Text>
-            <Text style={styles.body}>
-              Select only equipment you can use right now.
-            </Text>
-            <View style={styles.wrap}>
-              {equipment.map((e) => (
-                <Chip
-                  key={e}
-                  label={e}
-                  selected={available.includes(e)}
-                  onPress={() =>
-                    setAvailable(
-                      available.includes(e)
-                        ? available.filter((v) => v !== e)
-                        : [...available, e],
-                    )
-                  }
-                />
-              ))}
-            </View>
-            <Chip
-              label="Beginner alternatives only"
-              selected={beginner}
-              onPress={() => setBeginner(!beginner)}
-            />
-            <Button
-              label="Find alternatives"
-              busy={busy}
-              onPress={() => {
-                void showAlternatives();
-              }}
-            />
           </>
         )}
         <Text style={styles.heading}>Logged so far</Text>
@@ -686,6 +669,55 @@ export default function App() {
           variant="secondary"
           disabled={!payload(draft).exercises.length || busy}
           onPress={() => navigate("review")}
+        />
+      </>
+    );
+  else if (screen === "alternative-options" && exercise)
+    content = (
+      <>
+        <Button
+          label="Back to workout"
+          variant="text"
+          disabled={busy}
+          onPress={() => navigate("workout")}
+        />
+        <Text accessibilityRole="header" style={styles.title}>
+          Find an alternative
+        </Text>
+        <Text style={styles.body}>
+          Replacing {exercise.name}. Choose the equipment you can use right now.
+          Your logged sets stay with their original exercise.
+        </Text>
+        <Text style={styles.heading}>Available equipment</Text>
+        <View style={styles.wrap}>
+          {equipment.map((e) => (
+            <Chip
+              key={e}
+              label={e}
+              selected={available.includes(e)}
+              disabled={busy}
+              onPress={() =>
+                setAvailable(
+                  available.includes(e)
+                    ? available.filter((v) => v !== e)
+                    : [...available, e],
+                )
+              }
+            />
+          ))}
+        </View>
+        <Chip
+          label="Beginner alternatives only"
+          selected={beginner}
+          disabled={busy}
+          onPress={() => setBeginner(!beginner)}
+        />
+        <Button
+          label="Find alternatives"
+          busy={busy}
+          onPress={() => {
+            void showAlternatives();
+          }}
         />
       </>
     );
@@ -808,6 +840,43 @@ export default function App() {
           {exerciseName(progress.exerciseId)}
         </Text>
         <Text style={styles.heading}>Your progress</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showProgressHelp }}
+          aria-expanded={showProgressHelp}
+          onPress={() => setShowProgressHelp((shown) => !shown)}
+          style={styles.helpButton}
+        >
+          <Text style={styles.helpLabel}>
+            {showProgressHelp
+              ? "Hide explanations"
+              : "What do these numbers mean?"}
+          </Text>
+        </Pressable>
+        {showProgressHelp && (
+          <View style={styles.card}>
+            <Text accessibilityRole="header" style={styles.heading}>
+              Understanding your numbers
+            </Text>
+            <Text style={styles.body}>
+              Estimated one-rep max (1RM): the weight you could lift once,
+              estimated from your logged weight and reps. Use it to compare your
+              strength over time for this exercise.
+            </Text>
+            <Text style={styles.body}>
+              Volume: weight × reps, added across all sets of this exercise in a
+              workout. For example, 3 sets of 10 reps at 95 lb total 2,850 lb.
+            </Text>
+            <Text style={styles.body}>
+              Personal records: your best saved results for this exercise.
+            </Text>
+            <Text style={styles.body}>
+              A dash (—) for estimated 1RM means no estimate is available, such
+              as when no external weight was logged. A dash for the change means
+              there is no previous estimate to compare with.
+            </Text>
+          </View>
+        )}
         {!progress.points.length && (
           <Text style={styles.body}>
             No logged sets yet. Save a workout with this exercise to start
@@ -830,9 +899,7 @@ export default function App() {
             </Text>
           </View>
         )}
-        <Text style={styles.body}>
-          Estimated one-rep max over time. Zero external load has no estimate.
-        </Text>
+        <Text style={styles.heading}>Estimated one-rep max over time</Text>
         {progress.points.map((p) => (
           <View key={p.workoutId} style={styles.card}>
             <Text style={styles.heading}>
@@ -856,7 +923,7 @@ export default function App() {
               {number(p.volume)} lb
             </Text>
             <Text style={styles.small}>
-              Change from previous session: {number(p.oneRepMaxChange)} lb
+              1RM change from previous session: {number(p.oneRepMaxChange)} lb
             </Text>
           </View>
         ))}
@@ -877,7 +944,7 @@ export default function App() {
           difficulty: a.difficulty.toLowerCase(),
           equipmentLabels: a.requiredEquipment,
         }))}
-        onBack={() => navigate("workout")}
+        onBack={() => navigate("alternative-options")}
         onViewGuide={(id) => {
           setGuide(catalog.find((e) => e.id === Number(id)) || null);
           navigate("guide");
@@ -923,6 +990,28 @@ export default function App() {
         }}
       />
     ) : null;
+  const activeTab =
+    screen === "home"
+      ? "Home"
+      : screen === "progress" || screen === "progress-picker"
+        ? "Progress"
+        : screen === "history" || screen === "detail"
+          ? "History"
+          : "Workout";
+  const tabs = [
+    { label: "Home", open: () => navigate("home") },
+    {
+      label: "Workout",
+      open: () => navigate(draft.pending ? "review" : "workout"),
+    },
+    {
+      label: "History",
+      open: () => {
+        void showHistory();
+      },
+    },
+    { label: "Progress", open: () => navigate("progress-picker") },
+  ];
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -938,6 +1027,31 @@ export default function App() {
           <Text style={styles.brand}>SPOTME</Text>
         </Pressable>
         <Text style={styles.small}>PRIVATE BETA · LB</Text>
+      </View>
+      <View accessibilityRole="tablist" style={styles.tabs}>
+        {tabs.map((tab) => (
+          <Pressable
+            key={tab.label}
+            accessibilityRole="tab"
+            aria-selected={activeTab === tab.label}
+            accessibilityState={{
+              selected: activeTab === tab.label,
+              disabled: busy,
+            }}
+            disabled={busy}
+            onPress={tab.open}
+            style={[styles.tab, activeTab === tab.label && styles.tabSelected]}
+          >
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === tab.label && styles.tabLabelSelected,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       {specialized ? (
         <View style={styles.flex}>
@@ -1002,6 +1116,32 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 52 : 24,
   },
   flex: { flex: 1 },
+  helpButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  helpLabel: { color: colors.green, fontSize: 14, fontWeight: "600" },
+  tabs: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tab: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
+  },
+  tabSelected: {
+    borderBottomColor: colors.green,
+    backgroundColor: colors.pale,
+  },
+  tabLabel: { fontSize: 14, color: colors.muted },
+  tabLabelSelected: { color: colors.green, fontWeight: "700" },
   center: {
     flex: 1,
     justifyContent: "center",

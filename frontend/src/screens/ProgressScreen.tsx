@@ -10,7 +10,6 @@ import { StrengthChart } from '../components/StrengthChart';
 import type { StrengthPoint } from '../components/StrengthChart';
 import { colors } from '../theme';
 import { Button } from '../components/WorkoutControls';
-import Back from '../assets/strength/back.svg';
 import Dumbbell from '../assets/strength/dumbbell.svg';
 import ChevronDown from '../assets/strength/chevron-down.svg';
 import EmptyExercise from '../assets/strength/empty.svg';
@@ -102,20 +101,7 @@ export function ProgressScreen({
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.between}>
-        {single || empty ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back to Train"
-            disabled={!onTrain}
-            onPress={onTrain}
-            style={styles.headerBack}
-          >
-            <Back accessible={false} />
-            <Text style={styles.headerLabel}>Your progress</Text>
-          </Pressable>
-        ) : (
-          <Text style={styles.headerLabel}>Your progress</Text>
-        )}
+        <Text style={styles.headerLabel}>Your progress</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="View workout history"
@@ -414,13 +400,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerLabel: { color: colors.ink, fontSize: 15, fontWeight: '700' },
-  headerBack: {
-    minHeight: 44,
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-    flexShrink: 1,
-  },
   title: { color: colors.ink, fontSize: 32, fontWeight: '700', lineHeight: 36 },
   tabs: {
     backgroundColor: colors.soft,

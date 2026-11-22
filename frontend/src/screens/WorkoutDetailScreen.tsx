@@ -99,7 +99,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
           </View>
         ))}
       </View>
-      <Button label="Back to history" variant="secondary" onPress={onViewHistory ?? onBackToHistory} />
+      {!!onViewHistory && <Button label="View all workout history" variant="secondary" onPress={onViewHistory} />}
     </ScrollView>
   );
 }

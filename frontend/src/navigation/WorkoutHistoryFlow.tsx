@@ -267,7 +267,7 @@ export function WorkoutHistoryFlow({
             visitedList ? 'All workout history' : `Back to ${backLabel}`
           }
           onBackToHistory={visitedList ? openHistory : onBack}
-          onViewHistory={openHistory}
+          onViewHistory={visitedList ? undefined : openHistory}
           onViewExercise={onViewStrength}
         />
       ) : (

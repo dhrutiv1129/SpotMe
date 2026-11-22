@@ -14,6 +14,10 @@ import {
 import { Button, Sheet } from "./src/components/WorkoutControls";
 import {ActiveWorkoutScreen, elapsedLabel} from "./src/screens/ActiveWorkoutScreen";
 import {WorkoutReviewScreen} from "./src/screens/WorkoutReviewScreen";
+import {WorkoutSavedScreen, buildSavedWorkoutReceipt} from "./src/screens/WorkoutSavedScreen";
+import type {SavedWorkoutReceipt} from "./src/screens/WorkoutSavedScreen";
+import {ConsistencyCalendarScreen} from "./src/screens/ConsistencyCalendarScreen";
+import {currentHistoryMonth} from "./src/state/workoutHistory";
 import {StrengthProgressScreen} from "./src/screens/StrengthProgressScreen";
 import {WorkoutHistoryFlow} from "./src/navigation/WorkoutHistoryFlow";
 import {newHistoryBrowseState} from "./src/state/workoutHistory";
@@ -40,11 +44,14 @@ type Screen =
   | "create"
   | "workout"
   | "review"
+  | "saved"
   | "alternatives"
   | "guide"
   | "history"
   | "detail"
   | "strengthDetail"
+  | "consistencyDetail"
+  | "consistency"
   | "progress"
   | "progressHome"
   | "profile";
@@ -72,10 +79,15 @@ export default function App() {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [savedReceipt, setSavedReceipt] = useState<SavedWorkoutReceipt | null>(null);
   const [historyBrowseState, setHistoryBrowseState] = useState(newHistoryBrowseState);
+  const [consistencyMonth, setConsistencyMonth] = useState(currentHistoryMonth);
+  const [progressOrigin, setProgressOrigin] = useState<"progressHome" | "consistency">("progressHome");
+  const [progressView, setProgressView] = useState<"progressHome" | "consistency">("progressHome");
   const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
+  const [selectedAlternativeId, setSelectedAlternativeId] = useState<string | null>(null);
   const [available, setAvailable] = useState<string[]>([
     "bodyweight",
     "dumbbell",
@@ -124,9 +136,15 @@ export default function App() {
     setTrainLoading(true);
     setTrainError("");
     setCreation(null);
+    setSelectedAlternativeId(null);
+    setGuide(null);
     setStrengthExerciseId(null);
     setDetailId(null);
+    setSavedReceipt(null);
     setHistoryBrowseState(newHistoryBrowseState());
+    setConsistencyMonth(currentHistoryMonth());
+    setProgressOrigin("progressHome");
+    setProgressView("progressHome");
     setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
@@ -206,10 +224,12 @@ export default function App() {
   const exerciseName = (id: number) =>
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
+    if (next === "progress" || next === "progressHome") setProgressView("progressHome");
+    else if (next === "consistency") setProgressView("consistency");
     if (next === "home") setActiveTab("train");
-    else if (["create", "workout", "review", "alternatives", "guide"].includes(next))
+    else if (["create", "workout", "review", "saved", "alternatives", "guide"].includes(next))
       setActiveTab("train");
-    else if (next === "progress" || next === "progressHome" || next === "strengthDetail") setActiveTab("progress");
+    else if (next === "progress" || next === "progressHome" || next === "strengthDetail" || next === "consistency" || next === "consistencyDetail") setActiveTab("progress");
     else if (next === "profile") setActiveTab("you");
     setError("");
     setNotice("");
@@ -217,20 +237,25 @@ export default function App() {
     setEditingEquipment(false);
   }
   function selectTab(tab: MainTab) {
-    if (busyRef.current || tab === activeTab) return;
+    if (busyRef.current) return;
+    if (tab === activeTab) {
+      if (tab === "progress" && ["history", "detail", "strengthDetail", "consistencyDetail"].includes(screen))
+        navigate(progressView);
+      return;
+    }
     if (screen === "workout") {
       void run(async () => {
         const current = draftRef.current;
         const session = current.session || resumeDraft(current).session!;
         await updateDraft({...current, session: {...session, inputs: {...sessionInputs.current[current.key]}}});
-        navigate(tab === "progress" ? "progressHome" : tab === "you" ? "profile" : "home");
+        navigate(tab === "progress" ? progressView : tab === "you" ? "profile" : "home");
       });
       return;
     }
     setActiveTab(tab);
     navigate(
       tab === "train" ? (draftRef.current.pending ? "review" : creation ? "create" : "home") :
-      tab === "progress" ? "progressHome" : "profile",
+      tab === "progress" ? progressView : "profile",
     );
   }
   const trainTemplate = trainWorkouts.find(workout => workout.exercises.some(item => item.sets.length > 0));
@@ -260,6 +285,8 @@ export default function App() {
   } : null;
   const savedWorkoutCard = plannedWorkoutCard || historyWorkoutCard;
   const plannedTarget = draft.plan?.targets.find(item => item.exerciseId === selected);
+  const swapTarget = workoutTargets(draft).find(item => item.exerciseId === selected);
+  const swapSetsRemaining = swapTarget ? Math.max(0, swapTarget.sets - (draft.exercises.find(item => item.exerciseId === selected)?.sets.length || 0)) : null;
   const initials = user?.email.split("@")[0].split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "U";
 
   async function saveCreatedPlan() {
@@ -322,6 +349,7 @@ export default function App() {
         `/exercises/${exercise.id}/alternatives?equipment=${available.map(encodeURIComponent).join(",")}&beginnerOnly=${beginner}`,
       );
       setAlternatives(result);
+      setSelectedAlternativeId(id => screen === "alternatives" && result.some(item => String(item.exerciseId) === id) ? id : null);
       navigate("alternatives");
     });
   }
@@ -350,11 +378,12 @@ export default function App() {
         if (failure instanceof ApiError && failure.status === 400) await updateDraft({...pending, pending: false});
         throw failure;
       }
+      const receipt = buildSavedWorkoutReceipt(saved);
       await updateDraft(resetWorkout(current));
       setDetailId(saved.id);
+      setSavedReceipt(receipt);
       setSelected(null);
-      navigate("detail");
-      setNotice("Workout saved.");
+      navigate("saved");
     } catch (failure) {
       if (failure instanceof ApiError && failure.status === 401) {
         await storeToken(null);
@@ -365,13 +394,16 @@ export default function App() {
     } finally {busyRef.current = false; setBusy(false);}
   }
   async function showHistory() {
+    setProgressOrigin(screen === "consistency" ? "consistency" : "progressHome");
     navigate("history");
   }
   async function showProgress(id: number) {
     setStrengthExerciseId(id);
+    setProgressOrigin("progressHome");
     navigate("progress");
   }
   async function openStrengthWorkout(id: number) {
+    setProgressOrigin("progressHome");
     setDetailId(id);
     navigate("strengthDetail");
   }
@@ -384,6 +416,7 @@ export default function App() {
       setReady(false);
       setCatalog([]);
       setDetailId(null);
+      setSavedReceipt(null);
       setStrengthExerciseId(null);
       setDraft(newDraft());
     });
@@ -527,18 +560,28 @@ export default function App() {
   else content = null;
 
   const specialized =
-    screen === "history" || screen === "detail" || screen === "strengthDetail" ? (
+    screen === "saved" && savedReceipt ? (
+      <WorkoutSavedScreen receipt={savedReceipt}
+        onViewSession={id => {setDetailId(Number(id)); navigate("detail");}}
+        onReturnToTrain={() => navigate("home")} />
+    ) : screen === "history" || screen === "detail" || screen === "strengthDetail" || screen === "consistencyDetail" ? (
       <WorkoutHistoryFlow key={user.id} catalog={catalog}
         browseState={historyBrowseState} onBrowseStateChange={setHistoryBrowseState}
         initialWorkoutId={screen === "history" ? null : detailId}
         focusExerciseId={screen === "strengthDetail" ? strengthExerciseId : null}
-        backLabel={activeTab === "you" ? "You" : activeTab === "progress" ? "Strength" : "Train"}
-        onBack={() => navigate(activeTab === "you" ? "profile" : activeTab === "progress" ? "progressHome" : "home")}
+        backLabel={activeTab === "you" ? "You" : activeTab === "progress" ? progressOrigin === "consistency" ? "Consistency" : "Strength" : "Train"}
+        onBack={() => navigate(activeTab === "you" ? "profile" : activeTab === "progress" ? progressOrigin : "home")}
         onTrain={() => navigate("home")} onViewStrength={id => {void showProgress(id);}}
+        onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
+    ) : screen === "consistency" ? (
+      <ConsistencyCalendarScreen key={user.id} month={consistencyMonth} onChangeMonth={setConsistencyMonth}
+        onViewStrength={() => navigate("progressHome")} onViewHistory={() => {void showHistory();}}
+        onViewWorkout={id => {setDetailId(id); setProgressOrigin("consistency"); navigate("consistencyDetail");}}
         onUnauthorized={() => {void storeToken(null).then(() => {setUser(null); setReady(false);});}} />
     ) : screen === "progressHome" || screen === "progress" ? (
       <StrengthProgressScreen key={user.id} catalog={catalog} exerciseId={strengthExerciseId}
         onSelectExercise={setStrengthExerciseId}
+        onViewConsistency={() => navigate("consistency")}
         onViewHistory={() => {void showHistory();}}
         onViewSession={id => {void openStrengthWorkout(id);}}
         onTrain={() => navigate("home")}
@@ -562,8 +605,11 @@ export default function App() {
       <View style={styles.flex}>
       <AlternativesModel
         originalExerciseName={exercise?.name || ""}
-        targetLabel={exercise?.muscleGroup || ""}
+        targetLabel={swapTarget ? `${swapTarget.sets} × ${swapTarget.reps}` : "No set target"}
         availableEquipment={available}
+        selectedExerciseId={selectedAlternativeId}
+        onSelectExercise={id => {setSelectedAlternativeId(id); setError("");}}
+        onEditEquipment={() => {if (!busyRef.current) setEditingEquipment(true);}}
         alternatives={alternatives.map((a, i) => ({
           id: String(a.exerciseId),
           rank: i + 1,
@@ -573,11 +619,15 @@ export default function App() {
         }))}
         onBack={() => navigate("workout")}
         onViewGuide={(id) => {
-          setGuide(catalog.find((e) => e.id === Number(id)) || null);
+          const nextGuide = catalog.find(item => String(item.id) === id);
+          if (!nextGuide || !alternatives.some(item => String(item.exerciseId) === id)) {
+            setError("This exercise guide is unavailable. Choose another alternative.");
+            return;
+          }
+          setGuide(nextGuide);
           navigate("guide");
         }}
       />
-      <Button label="Edit equipment filters" variant="text" disabled={busy} onPress={() => setEditingEquipment(true)} />
       </View>
     ) : screen === "guide" && guide ? (
       <ExerciseGuideScreen
@@ -585,7 +635,7 @@ export default function App() {
           exerciseId: String(guide.id),
           name: guide.name,
           originalExerciseName: exercise?.name || "",
-          targetLabel: "Use a comfortable load and range of motion.",
+          targetLabel: swapTarget ? `${swapSetsRemaining} remaining sets × ${swapTarget.reps} reps` : "Choose sets and reps in your workout.",
           loadLabel: "All logged weight is external load in lb.",
           cues: [{ id: "instructions", text: guide.instructions }],
         }}
@@ -629,7 +679,7 @@ export default function App() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" />
-      {!["home", "create", "workout", "review", "progressHome", "progress", "history", "detail", "strengthDetail"].includes(screen) && <View style={styles.nav}>
+      {!["home", "create", "workout", "review", "saved", "progressHome", "progress", "history", "detail", "strengthDetail", "consistency", "consistencyDetail"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigate("home")}

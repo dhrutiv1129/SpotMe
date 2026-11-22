@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,13 @@ import {
 import { Button, NumberField } from '../components/WorkoutControls';
 import type { Exercise } from '../beta/api';
 import { colors } from '../theme';
+import Brand from '../assets/create/brand.svg';
+import LibraryBrand from '../assets/create/library-brand.svg';
+import Search from '../assets/create/search.svg';
+import EmptyExercise from '../assets/create/empty.svg';
+import Dumbbell from '../assets/create/dumbbell.svg';
+import Machine from '../assets/create/machine.svg';
+import Bodyweight from '../assets/create/bodyweight.svg';
 
 export interface WorkoutBuilderValue {
   name: string;
@@ -126,15 +132,7 @@ export function CreateWorkoutScreen({
     <View style={styles.header}>
       <View style={styles.identity}>
         <View style={styles.brandMark}>
-          <Image
-            source={
-              libraryOpen
-                ? require('../assets/create/library-brand.png')
-                : require('../assets/create/brand.png')
-            }
-            accessible={false}
-            style={libraryOpen ? styles.libraryBrandIcon : styles.brandIcon}
-          />
+          {libraryOpen ? <LibraryBrand accessible={false} /> : <Brand accessible={false} />}
         </View>
         <Text style={styles.brand}>SpotMe</Text>
       </View>
@@ -161,11 +159,7 @@ export function CreateWorkoutScreen({
           </Text>
         </View>
         <View style={styles.search}>
-          <Image
-            source={require('../assets/create/search.png')}
-            accessible={false}
-            style={styles.searchIcon}
-          />
+          <Search accessible={false} />
           <TextInput
             accessibilityLabel="Search exercises"
             placeholder="Search exercises"
@@ -220,12 +214,12 @@ export function CreateWorkoutScreen({
             );
             const checked = selected.includes(exercise.id);
             const group = equipmentGroup(exercise);
-            const icon =
+            const ExerciseIcon =
               group === 'Bodyweight'
-                ? require('../assets/create/bodyweight.png')
+                ? Bodyweight
                 : group === 'Machine'
-                  ? require('../assets/create/machine.png')
-                  : require('../assets/create/dumbbell.png');
+                  ? Machine
+                  : Dumbbell;
             return (
               <Pressable
                 key={exercise.id}
@@ -246,11 +240,7 @@ export function CreateWorkoutScreen({
                 style={[styles.result, checked && styles.resultSelected]}
               >
                 <View style={styles.thumbnail}>
-                  <Image
-                    source={icon}
-                    accessible={false}
-                    style={styles.exerciseIcon}
-                  />
+                  <ExerciseIcon accessible={false} />
                 </View>
                 <View style={styles.resultCopy}>
                   <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -351,11 +341,7 @@ export function CreateWorkoutScreen({
         {!value.exercises.length && (
           <View style={styles.empty}>
             <View style={styles.emptySymbol}>
-              <Image
-                source={require('../assets/create/empty.png')}
-                accessible={false}
-                style={styles.emptyIcon}
-              />
+              <EmptyExercise accessible={false} />
             </View>
             <Text style={styles.emptyTitle}>No exercises</Text>
           </View>
@@ -511,8 +497,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandIcon: { width: 22, height: 22 },
-  libraryBrandIcon: { width: 20, height: 20 },
   move: {
     width: 44,
     height: 44,
@@ -584,7 +568,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyIcon: { width: 30, height: 30 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: colors.ink },
   search: {
     height: 52,
@@ -597,7 +580,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
   },
-  searchIcon: { width: 20, height: 20 },
   searchInput: {
     flex: 1,
     minWidth: 0,
@@ -634,7 +616,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  exerciseIcon: { width: 22, height: 22 },
   resultCopy: { flex: 1, gap: 6 },
   exerciseName: {
     flexShrink: 1,

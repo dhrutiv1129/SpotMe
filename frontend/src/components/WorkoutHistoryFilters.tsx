@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,9 @@ import {
 import type { HistoryFilters } from '../state/workoutHistory';
 import { colors } from '../theme';
 import { Button, Sheet } from './WorkoutControls';
+import Close from '../assets/history/close.svg';
+import Calendar from '../assets/history/calendar.svg';
+import ChevronDown from '../assets/history/down.svg';
 
 interface Props {
   filters: HistoryFilters;
@@ -67,10 +69,7 @@ export function WorkoutHistoryFilters({
       onPress={() => onOpen(null)}
       style={styles.close}
     >
-      <Image
-        source={require('../assets/history/close.png')}
-        style={styles.closeIcon}
-      />
+      <Close accessible={false} />
     </Pressable>
   );
   return (
@@ -82,17 +81,11 @@ export function WorkoutHistoryFilters({
           onPress={() => onOpen('month')}
           style={styles.month}
         >
-          <Image
-            source={require('../assets/history/calendar.png')}
-            style={styles.calendar}
-          />
+          <Calendar accessible={false} />
           <Text style={styles.monthLabel}>
             {historyMonthLabel(filters.month)}
           </Text>
-          <Image
-            source={require('../assets/history/down.png')}
-            style={styles.down}
-          />
+          <ChevronDown accessible={false} />
         </Pressable>
         <View style={styles.chips}>
           {filters.exerciseId !== null && (
@@ -310,8 +303,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  calendar: { width: 18, height: 18 },
-  down: { width: 16, height: 16 },
   monthLabel: { flex: 1, color: colors.ink, fontSize: 14, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -347,7 +338,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeIcon: { width: 22, height: 22 },
   context: {
     backgroundColor: colors.pale,
     color: colors.green,

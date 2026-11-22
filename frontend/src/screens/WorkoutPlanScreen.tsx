@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 } from 'react-native';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
+import Back from '../assets/history/back.svg';
 
 interface PlanSet {
   id: string;
@@ -71,7 +71,7 @@ export function WorkoutPlanScreen({
         onPress={onReturnToWorkout}
         style={styles.backButton}
       >
-        <Image source={require('../assets/workout/back.png')} style={styles.backIcon} />
+        <Back accessible={false} />
         <Text style={styles.backLabel}>Back to active workout</Text>
       </Pressable>
 
@@ -175,7 +175,6 @@ export function WorkoutPlanScreen({
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 22},
-  backIcon: {width: 22, height: 22},
   backButton: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 14},
   backArrow: {color: colors.ink, fontSize: 28},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},

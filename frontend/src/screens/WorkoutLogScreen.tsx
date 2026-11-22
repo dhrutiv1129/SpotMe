@@ -1,7 +1,6 @@
 import React, {useRef, useState} from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,11 @@ import type {ExerciseView, LoggedSet} from '../components/ExerciseRow';
 import {WorkoutForm, validateSetInput} from '../components/WorkoutForm';
 import type {SetInput} from '../components/WorkoutForm';
 import {colors} from '../theme';
+import Back from '../assets/workout/back.svg';
+import Pause from '../assets/workout/pause.svg';
+import Timer from '../assets/workout/timer.svg';
+import Dumbbell from '../assets/workout/dumbbell.svg';
+import Next from '../assets/workout/next.svg';
 
 export type {LoggedSet} from '../components/ExerciseRow';
 
@@ -181,7 +185,7 @@ function ActiveWorkout({
             disabled={busy}
             style={styles.topButton}
           >
-            <Image source={require('../assets/workout/back.png')} style={styles.icon} />
+            <Back accessible={false} />
             <Text style={styles.topTitle}>Your workout</Text>
           </Pressable>
           <Pressable
@@ -196,7 +200,7 @@ function ActiveWorkout({
               );
             }}
           >
-            <Image source={require('../assets/workout/pause.png')} style={styles.icon} />
+            <Pause accessible={false} />
           </Pressable>
         </View>
 
@@ -205,7 +209,7 @@ function ActiveWorkout({
             <Text style={styles.eyebrow}>
               {workout.status === 'paused' ? 'PAUSED' : 'IN PROGRESS'}
             </Text>
-            <View style={styles.timer}><Image source={require('../assets/workout/timer.png')} style={styles.timerIcon} /><Text style={styles.heroTime}>{workout.elapsedLabel}</Text></View>
+            <View style={styles.timer}><Timer accessible={false} /><Text style={styles.heroTime}>{workout.elapsedLabel}</Text></View>
           </View>
           <Text style={styles.heroTitle}>{workout.name}</Text>
           <View
@@ -281,7 +285,7 @@ function ActiveWorkout({
             style={styles.nextCard}
           >
             <View style={styles.exerciseIcon}>
-              <Image source={require('../assets/workout/dumbbell.png')} style={styles.icon} />
+              <Dumbbell accessible={false} />
             </View>
             <View style={styles.nextCopy}>
               <Text style={styles.nextName}>{workout.nextExercise.name}</Text>
@@ -289,7 +293,7 @@ function ActiveWorkout({
                 {workout.nextExercise.targetLabel}
               </Text>
             </View>
-            <Image source={require('../assets/workout/next.png')} style={styles.smallIcon} />
+            <Next accessible={false} />
           </Pressable>
         )}
         <Button
@@ -539,9 +543,6 @@ function ActiveWorkout({
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
-  icon: {width: 22, height: 22},
-  smallIcon: {width: 18, height: 18},
-  timerIcon: {width: 14, height: 14},
   timer: {flexDirection: 'row', alignItems: 'center', gap: 6},
   center: {
     flex: 1,

@@ -67,6 +67,7 @@ export default function App() {
   const [history, setHistory] = useState<Workout[]>([]);
   const [detail, setDetail] = useState<Workout | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [showProgressHelp, setShowProgressHelp] = useState(false);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
   const [available, setAvailable] = useState<string[]>([
@@ -251,6 +252,7 @@ export default function App() {
   async function showProgress(id: number) {
     await run(async () => {
       setProgress(await api<Progress>(`/progress/${id}`));
+      setShowProgressHelp(false);
       navigate("progress");
     });
   }
@@ -838,6 +840,43 @@ export default function App() {
           {exerciseName(progress.exerciseId)}
         </Text>
         <Text style={styles.heading}>Your progress</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showProgressHelp }}
+          aria-expanded={showProgressHelp}
+          onPress={() => setShowProgressHelp((shown) => !shown)}
+          style={styles.helpButton}
+        >
+          <Text style={styles.helpLabel}>
+            {showProgressHelp
+              ? "Hide explanations"
+              : "What do these numbers mean?"}
+          </Text>
+        </Pressable>
+        {showProgressHelp && (
+          <View style={styles.card}>
+            <Text accessibilityRole="header" style={styles.heading}>
+              Understanding your numbers
+            </Text>
+            <Text style={styles.body}>
+              Estimated one-rep max (1RM): the weight you could lift once,
+              estimated from your logged weight and reps. Use it to compare your
+              strength over time for this exercise.
+            </Text>
+            <Text style={styles.body}>
+              Volume: weight × reps, added across all sets of this exercise in a
+              workout. For example, 3 sets of 10 reps at 95 lb total 2,850 lb.
+            </Text>
+            <Text style={styles.body}>
+              Personal records: your best saved results for this exercise.
+            </Text>
+            <Text style={styles.body}>
+              A dash (—) for estimated 1RM means no estimate is available, such
+              as when no external weight was logged. A dash for the change means
+              there is no previous estimate to compare with.
+            </Text>
+          </View>
+        )}
         {!progress.points.length && (
           <Text style={styles.body}>
             No logged sets yet. Save a workout with this exercise to start
@@ -860,9 +899,7 @@ export default function App() {
             </Text>
           </View>
         )}
-        <Text style={styles.body}>
-          Estimated one-rep max over time. Zero external load has no estimate.
-        </Text>
+        <Text style={styles.heading}>Estimated one-rep max over time</Text>
         {progress.points.map((p) => (
           <View key={p.workoutId} style={styles.card}>
             <Text style={styles.heading}>
@@ -886,7 +923,7 @@ export default function App() {
               {number(p.volume)} lb
             </Text>
             <Text style={styles.small}>
-              Change from previous session: {number(p.oneRepMaxChange)} lb
+              1RM change from previous session: {number(p.oneRepMaxChange)} lb
             </Text>
           </View>
         ))}
@@ -1079,6 +1116,12 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 52 : 24,
   },
   flex: { flex: 1 },
+  helpButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  helpLabel: { color: colors.green, fontSize: 14, fontWeight: "600" },
   tabs: {
     flexDirection: "row",
     borderBottomWidth: 1,

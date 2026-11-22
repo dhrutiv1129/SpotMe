@@ -83,6 +83,7 @@ export default function App() {
   const [historyBrowseState, setHistoryBrowseState] = useState(newHistoryBrowseState);
   const [consistencyMonth, setConsistencyMonth] = useState(currentHistoryMonth);
   const [progressOrigin, setProgressOrigin] = useState<"progressHome" | "consistency">("progressHome");
+  const [progressView, setProgressView] = useState<"progressHome" | "consistency">("progressHome");
   const [strengthExerciseId, setStrengthExerciseId] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [guide, setGuide] = useState<Exercise | null>(null);
@@ -143,6 +144,7 @@ export default function App() {
     setHistoryBrowseState(newHistoryBrowseState());
     setConsistencyMonth(currentHistoryMonth());
     setProgressOrigin("progressHome");
+    setProgressView("progressHome");
     setEditingEquipment(false);
     const [exercises, saved] = await Promise.all([
       api<Exercise[]>("/exercises"),
@@ -222,6 +224,8 @@ export default function App() {
   const exerciseName = (id: number) =>
     catalog.find((e) => e.id === id)?.name || `Exercise ${id}`;
   function navigate(next: Screen) {
+    if (next === "progress" || next === "progressHome") setProgressView("progressHome");
+    else if (next === "consistency") setProgressView("consistency");
     if (next === "home") setActiveTab("train");
     else if (["create", "workout", "review", "saved", "alternatives", "guide"].includes(next))
       setActiveTab("train");
@@ -233,20 +237,25 @@ export default function App() {
     setEditingEquipment(false);
   }
   function selectTab(tab: MainTab) {
-    if (busyRef.current || tab === activeTab) return;
+    if (busyRef.current) return;
+    if (tab === activeTab) {
+      if (tab === "progress" && ["history", "detail", "strengthDetail", "consistencyDetail"].includes(screen))
+        navigate(progressView);
+      return;
+    }
     if (screen === "workout") {
       void run(async () => {
         const current = draftRef.current;
         const session = current.session || resumeDraft(current).session!;
         await updateDraft({...current, session: {...session, inputs: {...sessionInputs.current[current.key]}}});
-        navigate(tab === "progress" ? "progressHome" : tab === "you" ? "profile" : "home");
+        navigate(tab === "progress" ? progressView : tab === "you" ? "profile" : "home");
       });
       return;
     }
     setActiveTab(tab);
     navigate(
       tab === "train" ? (draftRef.current.pending ? "review" : creation ? "create" : "home") :
-      tab === "progress" ? "progressHome" : "profile",
+      tab === "progress" ? progressView : "profile",
     );
   }
   const trainTemplate = trainWorkouts.find(workout => workout.exercises.some(item => item.sets.length > 0));

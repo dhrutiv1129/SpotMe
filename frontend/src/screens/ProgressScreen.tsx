@@ -346,15 +346,6 @@ export function ProgressScreen({
               </Pressable>
             ))}
           </View>
-          {single && progress.recentSessions[0] && (
-            <Button
-              label="View workout"
-              variant="secondary"
-              onPress={() =>
-                onViewSession(progress.recentSessions[0].sessionId)
-              }
-            />
-          )}
         </>
       )}
     </ScrollView>

@@ -185,11 +185,6 @@ export function WorkoutHistoryFlow({
     setReload((value) => value + 1);
   }
   const history = buildWorkoutHistory(workouts, catalog, filters, limit);
-  const strengthExercise =
-    detail?.exercises.find(
-      (exercise) =>
-        exercise.canViewStrength && Number(exercise.id) === focusExerciseId,
-    ) || detail?.exercises.find((exercise) => exercise.canViewStrength);
   const empty =
     history.sections.length === 0 ? (
       <View style={styles.empty}>
@@ -273,11 +268,6 @@ export function WorkoutHistoryFlow({
           }
           onBackToHistory={visitedList ? openHistory : onBack}
           onViewHistory={openHistory}
-          onViewStrength={
-            strengthExercise
-              ? () => onViewStrength(Number(strengthExercise.id))
-              : undefined
-          }
           onViewExercise={onViewStrength}
         />
       ) : (

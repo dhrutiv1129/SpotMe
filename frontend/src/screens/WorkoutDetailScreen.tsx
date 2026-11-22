@@ -39,12 +39,11 @@ interface Props {
   onBackToHistory: () => void;
   backLabel?: string;
   onViewHistory?: () => void;
-  onViewStrength?: () => void;
   onViewExercise?: (exerciseId: number) => void;
 }
 
 /** Shows the saved workout and completed sets. */
-export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewStrength, onViewExercise}: Props) {
+export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewExercise}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
@@ -100,7 +99,6 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
           </View>
         ))}
       </View>
-      {!!onViewStrength && <Button label="View strength progress" onPress={onViewStrength} />}
       <Button label="Back to history" variant="secondary" onPress={onViewHistory ?? onBackToHistory} />
     </ScrollView>
   );

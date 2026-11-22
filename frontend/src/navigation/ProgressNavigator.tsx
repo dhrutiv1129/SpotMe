@@ -125,7 +125,6 @@ export function ProgressNavigator({
             onBackToHistory={() => navigate(workoutOrigin)}
             onViewHistory={() => navigate('history')}
             backLabel={workoutOrigin === 'history' ? 'All workout history' : tab === 'consistency' ? 'Consistency' : 'Strength progress'}
-            onViewStrength={() => switchTab('strength')}
           />
         ) : view === 'history' ? (
           <WorkoutHistoryScreen

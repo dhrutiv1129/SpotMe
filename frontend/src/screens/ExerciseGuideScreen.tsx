@@ -1,5 +1,8 @@
 import React, {useRef, useState} from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/guide/back.svg';
+import Close from '../assets/guide/close.svg';
+import ShieldCheck from '../assets/guide/shield-check.svg';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
 
@@ -44,11 +47,11 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to exercise alternatives" onPress={onBack} disabled={busy} style={styles.back}>
-          <Image source={require('../assets/back.png')} style={styles.headerIcon} />
+          <Back accessible={false} />
           <Text style={styles.backLabel}>Exercise guide</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Close guide and keep current exercise" onPress={onKeepExercise} disabled={busy} style={styles.close}>
-          <Image source={require('../assets/close.png')} style={styles.headerIcon} />
+          <Close accessible={false} />
         </Pressable>
       </View>
       <View style={styles.hero}>
@@ -67,7 +70,7 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
         ))}
       </View>
       <View style={styles.note}>
-        <Image source={require('../assets/shield-check.png')} style={styles.safetyIcon} />
+        <ShieldCheck accessible={false} />
         <Text style={[styles.body, styles.noteText]}>Warm up first. Stop if you feel pain.</Text>
       </View>
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
@@ -86,7 +89,6 @@ const styles = StyleSheet.create({
   content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1},
-  headerIcon: {width: 22, height: 22},
   close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   body: {color: colors.muted, fontSize: 13, lineHeight: 20},
@@ -101,7 +103,6 @@ const styles = StyleSheet.create({
   cueNumber: {color: colors.green, backgroundColor: colors.pale, borderRadius: 10, width: 28, height: 28, lineHeight: 28, textAlign: 'center', fontSize: 11, fontWeight: '700'},
   cueText: {flex: 1, paddingTop: 4},
   note: {backgroundColor: '#F7EDD8', borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10},
-  safetyIcon: {width: 19, height: 19},
   noteText: {flex: 1},
   actions: {gap: 12},
   keep: {minHeight: 44, justifyContent: 'center', alignItems: 'center'},

@@ -1,5 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import Close from '../assets/history/close.svg';
+import Search from '../assets/strength/search.svg';
+import Exercise from '../assets/strength/option.svg';
+import Selected from '../assets/strength/selected.svg';
 import {colors} from '../theme';
 
 export interface StrengthExerciseOption {
@@ -91,23 +95,23 @@ export function StrengthExerciseSelector({selectedExerciseId, searchExercises, o
             <View style={styles.heading}>
               <Text accessibilityRole="header" style={styles.title}>Choose exercise</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Close exercise selector" disabled={selecting} onPress={close} style={styles.close}>
-                <Image source={require('../assets/strength/close.png')} style={styles.icon} />
+                <Close accessible={false} />
               </Pressable>
             </View>
             <View style={styles.search}>
-              <Image source={require('../assets/strength/search.png')} style={styles.searchIcon} />
+              <Search accessible={false} />
               <TextInput accessibilityLabel="Search exercises" placeholder="Search exercises" placeholderTextColor={colors.muted} value={query} editable={!selecting} onChangeText={setQuery} autoCapitalize="none" autoCorrect={false} style={styles.input} />
             </View>
             {loading && <ActivityIndicator accessibilityLabel="Searching exercises" color={colors.green} />}
             <View accessibilityRole="radiogroup" accessibilityLabel="Strength exercise" style={styles.options}>
               {options.map((exercise) => (
                 <Pressable key={exercise.id} accessibilityRole="radio" accessibilityLabel={`${exercise.name}, ${exercise.description}`} accessibilityState={{checked: exercise.id === selectedExerciseId, disabled: selecting || loading}} disabled={selecting || loading} onPress={() => {void select(exercise.id);}} style={[styles.option, exercise.id === selectedExerciseId && styles.selected]}>
-                  <Image source={require('../assets/strength/option.png')} style={styles.icon} />
+                  <Exercise accessible={false} />
                   <View style={styles.info}>
                     <Text style={styles.name}>{exercise.name}</Text>
                     <Text style={styles.description}>{exercise.description}</Text>
                   </View>
-                  {exercise.id === selectedExerciseId ? <Image source={require('../assets/strength/selected.png')} style={styles.icon} /> : <View style={styles.unselected} />}
+                  {exercise.id === selectedExerciseId ? <Selected accessible={false} /> : <View style={styles.unselected} />}
                 </Pressable>
               ))}
             </View>
@@ -132,9 +136,7 @@ const styles = StyleSheet.create({
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, lineHeight: 33, fontWeight: '700', letterSpacing: -1.1},
   close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
-  icon: {width: 22, height: 22},
   search: {minHeight: 52, borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12},
-  searchIcon: {width: 20, height: 20},
   input: {flex: 1, color: colors.ink, fontSize: 14, paddingVertical: 12},
   options: {gap: 8},
   option: {minHeight: 68, borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12},

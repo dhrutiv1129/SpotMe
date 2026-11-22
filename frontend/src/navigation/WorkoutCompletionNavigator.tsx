@@ -23,7 +23,7 @@ export function WorkoutCompletionNavigator(props: Props) {
   return <CompletionFlow key={props.workout.sessionId} {...props} />;
 }
 
-function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnToTrain, onViewHistory, onViewStrength}: Props) {
+function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnToTrain, onViewHistory}: Props) {
   const [receipt, setReceipt] = useState<SavedWorkoutReceipt | null>(null);
   const [detail, setDetail] = useState<WorkoutDetailView | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,6 @@ function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnT
           backLabel="Workout saved"
           onBackToHistory={() => setDetail(null)}
           onViewHistory={() => leave(onViewHistory)}
-          onViewStrength={() => leave(onViewStrength)}
         />
       ) : receipt ? (
         <WorkoutSavedScreen

@@ -1,5 +1,7 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
+import PreviousMonth from '../assets/consistency/previous.svg';
+import NextMonth from '../assets/consistency/next.svg';
 import {colors} from '../theme';
 
 export interface CalendarDay {
@@ -14,6 +16,7 @@ export interface CalendarDay {
 
 export interface WorkoutCalendar {
   monthLabel: string;
+  activityLabel?: string;
   previousMonthId: string | null;
   nextMonthId: string | null;
   weeks: Array<{id: string; days: Array<CalendarDay | null>}>;
@@ -42,7 +45,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
             onPress={() => {if (calendar.previousMonthId) onChangeMonth(calendar.previousMonthId);}}
             style={[styles.monthButton, !calendar.previousMonthId && styles.disabled]}
           >
-            <Image source={require('../assets/calendar-previous.png')} style={styles.chevron} />
+            <PreviousMonth accessible={false} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -51,7 +54,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
             onPress={() => {if (calendar.nextMonthId) onChangeMonth(calendar.nextMonthId);}}
             style={[styles.monthButton, !calendar.nextMonthId && styles.disabled]}
           >
-            <Image source={require('../assets/calendar-next.png')} style={styles.chevron} />
+            <NextMonth accessible={false} />
           </Pressable>
         </View>
       </View>
@@ -80,9 +83,11 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
         ))}
       </View>
       <View style={styles.legend}>
-        <Text style={styles.legendText}>Activity</Text>
-        <View style={[styles.swatch, styles.light]} />
-        <View style={[styles.swatch, styles.medium]} />
+        <Text style={styles.legendText}>{calendar.activityLabel || 'Activity'}</Text>
+        {!calendar.activityLabel && <>
+          <View style={[styles.swatch, styles.light]} />
+          <View style={[styles.swatch, styles.medium]} />
+        </>}
         <View style={[styles.swatch, styles.high]} />
         <Text style={styles.legendText}>{selectedDate ? 'Selected' : 'Today'}</Text>
         <View style={styles.todayLegend} />
@@ -97,7 +102,6 @@ const styles = StyleSheet.create({
   title: {color: colors.ink, fontSize: 18, fontWeight: '700', flex: 1},
   monthActions: {flexDirection: 'row'},
   monthButton: {width: 36, minHeight: 36, alignItems: 'center', justifyContent: 'center'},
-  chevron: {width: 18, height: 18},
   disabled: {opacity: 0.4},
   weekdays: {flexDirection: 'row'},
   weekday: {flex: 1, color: colors.muted, fontSize: 10, textAlign: 'center'},

@@ -41,6 +41,7 @@ interface Props {
   exerciseId: number | null;
   onSelectExercise: (id: number) => void;
   onViewHistory: () => void;
+  onViewConsistency?: () => void;
   onViewSession: (id: number) => void;
   onTrain: () => void;
   onUnauthorized: () => void;
@@ -52,6 +53,7 @@ export function StrengthProgressScreen({
   exerciseId,
   onSelectExercise,
   onViewHistory,
+  onViewConsistency,
   onViewSession,
   onTrain,
   onUnauthorized,
@@ -145,6 +147,7 @@ export function StrengthProgressScreen({
           progress={progress}
           onChooseExercise={() => setChoosing(true)}
           onViewHistory={onViewHistory}
+          onViewConsistency={onViewConsistency}
           onViewSession={(id) => onViewSession(Number(id))}
           onTrain={onTrain}
         />
@@ -193,6 +196,7 @@ export function StrengthProgressScreen({
           )}
         </View>
       )}
+      {!progress && onViewConsistency && <Button label="View consistency" variant="text" onPress={onViewConsistency} />}
       {detailsUnavailable && !loading && (
         <View style={styles.warning}>
           <Text style={styles.body}>

@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,11 @@ import { StrengthChart } from '../components/StrengthChart';
 import type { StrengthPoint } from '../components/StrengthChart';
 import { colors } from '../theme';
 import { Button } from '../components/WorkoutControls';
+import Dumbbell from '../assets/strength/dumbbell.svg';
+import ChevronDown from '../assets/strength/chevron-down.svg';
+import EmptyExercise from '../assets/strength/empty.svg';
+import Trophy from '../assets/strength/trophy.svg';
+import Next from '../assets/strength/next.svg';
 
 export interface StrengthProgressView {
   exerciseId: string;
@@ -97,36 +101,7 @@ export function ProgressScreen({
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.between}>
-        {single || empty ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back to Train"
-            disabled={!onTrain}
-            onPress={onTrain}
-            style={styles.headerBack}
-          >
-            <Image
-              source={require('../assets/strength/back.png')}
-              style={styles.headerIcon}
-            />
-            <Text style={styles.headerLabel}>Your progress</Text>
-          </Pressable>
-        ) : (
-          <Text style={styles.headerLabel}>Your progress</Text>
-        )}
-        {(single || empty) && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View saved workout dates"
-            onPress={onViewHistory}
-            style={styles.historyLink}
-          >
-            <Image
-              source={require('../assets/strength/calendar.png')}
-              style={styles.headerIcon}
-            />
-          </Pressable>
-        )}
+        <Text style={styles.headerLabel}>Your progress</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="View workout history"
@@ -164,25 +139,16 @@ export function ProgressScreen({
           onPress={onChooseExercise}
           style={styles.exercisePicker}
         >
-          <Image
-            source={require('../assets/strength/dumbbell.png')}
-            style={styles.exerciseIcon}
-          />
+          <Dumbbell accessible={false} />
           <Text style={styles.exerciseName}>{progress.exerciseName}</Text>
-          <Image
-            source={require('../assets/strength/chevron-down.png')}
-            style={styles.chevron}
-          />
+          <ChevronDown accessible={false} />
         </Pressable>
         <Text style={styles.period}>{progress.periodLabel}</Text>
       </View>
       {empty ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIcon}>
-            <Image
-              source={require('../assets/strength/empty.png')}
-              style={styles.emptyGlyph}
-            />
+            <EmptyExercise accessible={false} />
           </View>
           <Text accessibilityRole="header" style={styles.emptyTitle}>
             No workouts yet
@@ -296,10 +262,7 @@ export function ProgressScreen({
               <View style={styles.performanceCard}>
                 <View style={styles.recordLabel}>
                   {!single && (
-                    <Image
-                      source={require('../assets/strength/trophy.png')}
-                      style={styles.trophy}
-                    />
+                    <Trophy accessible={false} />
                   )}
                   <Text style={styles.caption}>
                     {progress.recordTitle || 'Personal best'}
@@ -348,10 +311,7 @@ export function ProgressScreen({
                       <Text style={styles.singleDate}>
                         {session.fullDateLabel || session.dateLabel}
                       </Text>
-                      <Image
-                        source={require('../assets/strength/next.png')}
-                        style={styles.nextIcon}
-                      />
+                      <Next accessible={false} />
                     </View>
                     <Text style={styles.caption}>Saved workout</Text>
                     <Text style={styles.firstSession}>
@@ -372,15 +332,6 @@ export function ProgressScreen({
               </Pressable>
             ))}
           </View>
-          {single && progress.recentSessions[0] && (
-            <Button
-              label="View workout"
-              variant="secondary"
-              onPress={() =>
-                onViewSession(progress.recentSessions[0].sessionId)
-              }
-            />
-          )}
         </>
       )}
     </ScrollView>
@@ -415,7 +366,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyGlyph: { width: 32, height: 32 },
   emptyTitle: {
     fontSize: 27,
     fontWeight: '700',
@@ -450,15 +400,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerLabel: { color: colors.ink, fontSize: 15, fontWeight: '700' },
-  headerBack: {
-    minHeight: 44,
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-    flexShrink: 1,
-  },
-  headerIcon: { width: 22, height: 22 },
-  nextIcon: { width: 18, height: 18 },
   title: { color: colors.ink, fontSize: 32, fontWeight: '700', lineHeight: 36 },
   tabs: {
     backgroundColor: colors.soft,
@@ -484,14 +425,12 @@ const styles = StyleSheet.create({
     gap: 9,
     flexShrink: 1,
   },
-  exerciseIcon: { width: 20, height: 20 },
   exerciseName: {
     color: colors.ink,
     fontSize: 17,
     fontWeight: '700',
     flexShrink: 1,
   },
-  chevron: { width: 16, height: 16 },
   period: {
     color: colors.muted,
     backgroundColor: colors.soft,
@@ -553,7 +492,6 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   recordLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  trophy: { width: 15, height: 15 },
   value: { color: colors.ink, fontSize: 26, fontWeight: '700' },
   greenCaption: { color: colors.green, fontSize: 11, fontWeight: '600' },
   historyLink: { minHeight: 44, justifyContent: 'center' },

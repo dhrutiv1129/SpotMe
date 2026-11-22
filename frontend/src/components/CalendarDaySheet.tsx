@@ -1,5 +1,6 @@
 import React from 'react';
-import {Image, Modal, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Modal, Pressable, StyleSheet, Text, View} from 'react-native';
+import Close from '../assets/history/close.svg';
 import type {WorkoutDetailView} from '../screens/WorkoutDetailScreen';
 import {colors} from '../theme';
 import {Button} from './WorkoutControls';
@@ -21,7 +22,7 @@ export function CalendarDaySheet({workout, onClose, onViewWorkout}: Props) {
           <View style={styles.heading}>
             <Text accessibilityRole="header" style={styles.title}>{workout.dateLabel}</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Close day details" onPress={onClose} style={styles.close}>
-              <Image source={require('../assets/close.png')} style={styles.closeIcon} />
+              <Close accessible={false} />
             </Pressable>
           </View>
           <View style={styles.summary}>
@@ -43,7 +44,6 @@ const styles = StyleSheet.create({
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, fontWeight: '700', lineHeight: 33, letterSpacing: -1.1},
   close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
-  closeIcon: {width: 22, height: 22},
   summary: {gap: 7},
   name: {color: colors.ink, fontSize: 20, fontWeight: '700'},
   caption: {color: colors.muted, fontSize: 13, lineHeight: 19},

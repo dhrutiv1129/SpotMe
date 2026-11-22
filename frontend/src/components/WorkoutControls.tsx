@@ -96,9 +96,10 @@ interface SheetProps {
   onClose: () => void;
   locked?: boolean;
   children: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 
-export function Sheet({title, onClose, locked, children}: SheetProps) {
+export function Sheet({title, onClose, locked, children, headerAction}: SheetProps) {
   return (
     <Modal
       visible
@@ -125,9 +126,9 @@ export function Sheet({title, onClose, locked, children}: SheetProps) {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.sheetContent}
           >
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
+            <View style={styles.sheetHeading}><Text accessibilityRole="header" style={[styles.sheetTitle, styles.sheetHeadingTitle]}>
               {title}
-            </Text>
+            </Text>{headerAction}</View>
             {children}
           </ScrollView>
         </View>
@@ -205,6 +206,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.7,
   },
+  sheetHeading: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  sheetHeadingTitle: {flex: 1},
 });
 
 const buttonStyles = {

@@ -1,5 +1,9 @@
-import React, {useRef, useState} from 'react';
-import {ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
+import DayCheck from '../assets/goal/day-check.svg';
+import Calendar from '../assets/goal/calendar.svg';
+import SaveCheck from '../assets/goal/save-check.svg';
 import {colors} from '../theme';
 
 export interface WeeklyGoalView {
@@ -18,49 +22,59 @@ export interface WeeklyGoalView {
 }
 
 interface Props {
-  goal: WeeklyGoalView;
-  onSave: (workoutsPerWeek: number) => Promise<void>;
+  goal: WeeklyGoalView | null;
+  onSave?: (workoutsPerWeek: number) => Promise<void>;
   onClose: () => void;
 }
 
 /** Edits the weekly goal without changing the current week's results. */
 export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
-  const [selected, setSelected] = useState(goal.workoutsPerWeek);
+  const [selected, setSelected] = useState<number | null>(goal?.workoutsPerWeek ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
-  const valid = Number.isInteger(selected) && selected >= 1 && selected <= 7;
-  const canSave = valid && selected !== goal.workoutsPerWeek && !saving;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {mounted.current = false;};
+  }, []);
+  const valid = selected !== null && Number.isInteger(selected) && selected >= 1 && selected <= 7;
+  const canSave = !!onSave && valid && selected !== goal?.workoutsPerWeek && !saving;
+
+  function close() {
+    if (!savingRef.current) onClose();
+  }
 
   async function save() {
-    if (!canSave || savingRef.current) return;
+    if (!canSave || savingRef.current || selected === null || !onSave) return;
     savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
       await onSave(selected);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Your goal could not be saved.');
-      savingRef.current = false;
-      setSaving(false);
+      if (mounted.current) setError(failure instanceof Error ? failure.message : 'Your goal could not be saved.');
       return;
+    } finally {
+      savingRef.current = false;
+      if (mounted.current) setSaving(false);
     }
-    onClose();
+    if (mounted.current) onClose();
   }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to Consistency" disabled={saving} onPress={onClose} style={styles.back}>
-          <Image source={require('../assets/back.png')} style={styles.backIcon} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to Consistency" disabled={saving} onPress={close} style={styles.back}>
+          <Back accessible={false} />
           <Text style={styles.headerLabel}>Edit weekly goal</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" disabled={saving} onPress={onClose} style={styles.cancel}>
+        <Pressable accessibilityRole="button" disabled={saving} onPress={close} style={styles.cancel}>
           <Text style={styles.cancelLabel}>Cancel</Text>
         </Pressable>
       </View>
       <Text accessibilityRole="header" style={styles.title}>Weekly workout goal</Text>
-      <View style={[styles.card, styles.pale]}>
+      {goal ? <View style={[styles.card, styles.pale]}>
         <View style={styles.header}>
           <Text style={styles.progress}>{goal.weeklyProgressLabel}</Text>
           <Text style={styles.badge}>Current goal</Text>
@@ -69,7 +83,7 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
           {goal.days.map((day) => (
             <View key={day.date} accessible accessibilityLabel={day.accessibilityLabel} style={styles.day}>
               <View style={[styles.circle, day.state === 'completed' && styles.completed, day.state === 'rest' && styles.rest]}>
-                {day.showCheck ? <Image source={require('../assets/goal-day-check.png')} style={styles.dayCheck} /> : (
+                {day.showCheck ? <DayCheck accessible={false} /> : (
                   <Text style={[styles.date, day.state === 'completed' && styles.lightText, day.state === 'rest' && styles.restText]}>{day.dateLabel}</Text>
                 )}
               </View>
@@ -78,26 +92,30 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
           ))}
         </View>
         <Text style={styles.caption}>{goal.weekRangeLabel}</Text>
-      </View>
+      </View> : <View style={[styles.card, styles.pale]}>
+        <Text style={styles.progress}>Current goal unavailable</Text>
+        <Text style={styles.caption}>Your saved weekly goal and progress are not available yet.</Text>
+      </View>}
       <View style={styles.card}>
         <Text style={styles.label}>Workouts per week</Text>
-        <View style={styles.valueRow}><Text style={styles.value}>{selected}</Text><Text style={styles.unit}>workouts / week</Text></View>
+        <View style={styles.valueRow}><Text style={styles.value}>{selected ?? '—'}</Text><Text style={styles.unit}>workouts / week</Text></View>
         <View accessibilityRole="radiogroup" accessibilityLabel="Workouts per week" style={styles.choices}>
           {[1, 2, 3, 4, 5, 6, 7].map((value) => (
-            <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`${value} workouts per week`} accessibilityState={{selected: selected === value, disabled: saving}} disabled={saving} onPress={() => setSelected(value)} style={[styles.choice, selected === value && styles.selected]}>
+            <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`${value} workouts per week`} accessibilityState={{checked: selected === value, disabled: saving}} disabled={saving} onPress={() => {if (!savingRef.current) {setSelected(value); setError(null);}}} style={[styles.choice, selected === value && styles.selected]}>
               <Text style={[styles.choiceLabel, selected === value && styles.lightText]}>{value}</Text>
             </Pressable>
           ))}
         </View>
       </View>
       <View style={styles.guidance}>
-        <Image source={require('../assets/calendar.png')} style={styles.calendarIcon} />
-        <Text style={styles.effectiveDate}>{goal.effectiveDateLabel}</Text>
+        <Calendar accessible={false} />
+        <Text style={styles.effectiveDate}>{goal?.effectiveDateLabel || 'Start date unavailable'}</Text>
       </View>
+      {!onSave && <Text style={styles.caption}>Goal saving is not available yet. Your selection will not be saved.</Text>}
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       <Pressable accessibilityRole="button" accessibilityState={{disabled: !canSave, busy: saving}} disabled={!canSave} onPress={() => {void save();}} style={[styles.save, !canSave && styles.disabled]}>
-        {saving ? <ActivityIndicator color={colors.surface} /> : <Image source={require('../assets/goal-save-check.png')} style={styles.saveCheck} />}
-        <Text style={styles.saveLabel}>{saving ? 'Saving goal…' : 'Save goal'}</Text>
+        {saving ? <ActivityIndicator color={colors.surface} /> : <SaveCheck accessible={false} />}
+        <Text style={styles.saveLabel}>{saving ? 'Saving goal…' : error ? 'Retry saving goal' : 'Save goal'}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -105,10 +123,9 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
   back: {flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, flexShrink: 1},
-  backIcon: {width: 22, height: 22},
   headerLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   cancel: {minHeight: 44, justifyContent: 'center'},
   cancelLabel: {color: colors.green, fontSize: 13},
@@ -124,7 +141,6 @@ const styles = StyleSheet.create({
   rest: {backgroundColor: '#D6E4D0', borderColor: '#D6E4D0'},
   date: {color: colors.muted, fontSize: 11},
   restText: {color: colors.green},
-  dayCheck: {width: 14, height: 14},
   weekday: {color: colors.muted, fontSize: 10},
   caption: {color: colors.muted, fontSize: 12, lineHeight: 18},
   label: {color: colors.ink, fontSize: 15, fontWeight: '700'},
@@ -137,10 +153,8 @@ const styles = StyleSheet.create({
   choiceLabel: {color: colors.ink, fontSize: 15, fontWeight: '600'},
   lightText: {color: colors.surface},
   guidance: {backgroundColor: colors.pale, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12},
-  calendarIcon: {width: 20, height: 20},
   effectiveDate: {flex: 1, color: colors.ink, fontSize: 14, fontWeight: '700'},
   save: {minHeight: 54, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10},
-  saveCheck: {width: 18, height: 18},
   saveLabel: {color: colors.surface, fontSize: 15, fontWeight: '700'},
   disabled: {opacity: 0.45},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},

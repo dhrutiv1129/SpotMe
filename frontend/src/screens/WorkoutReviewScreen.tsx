@@ -1,5 +1,6 @@
 import React, {useRef, useState} from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/workout/back.svg';
 import {Button} from '../components/WorkoutControls';
 import type {LoggedSet} from '../components/ExerciseRow';
 import type {SavedWorkoutReceipt} from './WorkoutSavedScreen';
@@ -60,7 +61,7 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved, p
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" disabled={busy || pending} onPress={onKeepTraining} style={styles.back}>
-        <Image source={require('../assets/workout/back.png')} style={styles.backIcon} />
+        <Back accessible={false} />
         <Text style={styles.header}>Your workout</Text>
       </Pressable>
       <Text accessibilityRole="header" style={styles.title}>Review & finish</Text>
@@ -95,7 +96,6 @@ const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44},
-  backIcon: {width: 22, height: 22},
   header: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   title: {color: colors.ink, fontSize: 32, lineHeight: 36, fontWeight: '700', letterSpacing: -1.2},
   body: {color: colors.muted, fontSize: 11, lineHeight: 16},

@@ -1,5 +1,7 @@
 import React from 'react';
-import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Back from '../assets/history/back.svg';
+import Next from '../assets/history/next.svg';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
 
@@ -31,15 +33,18 @@ interface Props {
   onBack: () => void;
   onViewSession: (sessionId: string) => void;
   onLoadMore?: () => void;
+  backLabel?: string;
+  filters?: React.ReactNode;
+  empty?: React.ReactNode;
 }
 
 /** Shows workout dates and totals returned by the backend. */
-export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore}: Props) {
+export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore, backLabel = 'Progress', filters, empty}: Props) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
-        <Image source={require('../assets/back.png')} style={styles.backIcon} />
-        <Text style={styles.backLabel}>Progress</Text>
+        <Back accessible={false} />
+        <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
         <Text accessibilityRole="header" style={styles.title}>Workout history</Text>
@@ -54,10 +59,12 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
           <Text style={styles.caption}>{history.weeklyDescription}</Text>
         </View>
       </View>
+      {filters}
       <View style={styles.heading}>
-        <Text style={styles.month}>{history.monthLabel}</Text>
+        {!filters && <Text style={styles.month}>{history.monthLabel}</Text>}
         <Text style={styles.body}>{history.resultLabel}</Text>
       </View>
+      {empty}
       {history.sections.map((section) => (
         <View key={section.id} style={styles.section}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>
@@ -78,7 +85,7 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
                 <Text style={styles.caption}>{session.description}</Text>
                 <Text style={[styles.caption, session.highlighted && styles.highlight]}>{session.detailLabel}</Text>
               </View>
-              <Image source={require('../assets/chevron-right.png')} style={styles.chevron} />
+              <Next accessible={false} />
             </Pressable>
           ))}
         </View>
@@ -90,9 +97,8 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
+  content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},
-  backIcon: {width: 22, height: 22},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   heading: {gap: 8},
   title: {color: colors.ink, fontSize: 32, lineHeight: 36, letterSpacing: -1.2, fontWeight: '700'},
@@ -111,5 +117,4 @@ const styles = StyleSheet.create({
   entryCopy: {flex: 1, gap: 6},
   entryTitle: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   highlight: {color: colors.green},
-  chevron: {width: 16, height: 16},
 });

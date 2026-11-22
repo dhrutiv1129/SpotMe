@@ -1,5 +1,7 @@
 import React, {useRef, useState} from 'react';
-import {ActivityIndicator, Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import Brand from '../assets/train/brand.svg';
+import Play from '../assets/train/play.svg';
 import {Button} from '../components/WorkoutControls';
 import {colors} from '../theme';
 
@@ -57,7 +59,7 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <View style={styles.identity}>
-          <View style={styles.brandMark}><Image source={require('../assets/train-brand.png')} accessible={false} style={styles.brandIcon} /></View>
+          <View style={styles.brandMark}><Brand accessible={false} /></View>
           <Text style={styles.brand}>SpotMe</Text>
         </View>
         <View style={styles.avatar}><Text style={styles.initials}>{initials}</Text></View>
@@ -111,7 +113,7 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
           </View>
           <Pressable accessibilityRole="button" accessibilityState={{disabled: locked || !!unfinishedWorkout, busy: starting}} disabled={locked || !!unfinishedWorkout} onPress={() => {void start();}} style={({pressed}) => [styles.start, (pressed || locked || !!unfinishedWorkout) && styles.dimmed]}>
             <Text style={styles.startLabel}>{starting ? 'Starting workout…' : 'Start workout'}</Text>
-            {starting ? <ActivityIndicator color={colors.surface} /> : <Image source={require('../assets/train-play.png')} accessible={false} style={styles.playIcon} />}
+            {starting ? <ActivityIndicator color={colors.surface} /> : <Play accessible={false} />}
           </Pressable>
         </View>
       </View>
@@ -134,7 +136,6 @@ const styles = StyleSheet.create({
   header: {minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   identity: {flexDirection: 'row', alignItems: 'center', gap: 10},
   brandMark: {width: 32, height: 32, backgroundColor: colors.green, borderRadius: 11, alignItems: 'center', justifyContent: 'center'},
-  brandIcon: {width: 20, height: 20},
   brand: {color: colors.ink, fontSize: 23, fontWeight: '700'},
   avatar: {width: 36, height: 36, backgroundColor: colors.pale, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
   initials: {color: colors.green, fontSize: 12},
@@ -155,7 +156,6 @@ const styles = StyleSheet.create({
   remaining: {color: '#B7C6B9', fontSize: 11},
   start: {minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10},
   startLabel: {color: colors.surface, fontSize: 15, fontWeight: '700'},
-  playIcon: {width: 19, height: 19},
   dimmed: {opacity: 0.75},
   create: {minHeight: 44, alignItems: 'center', justifyContent: 'center'},
   createLabel: {color: colors.ink, fontSize: 14, fontWeight: '700'},

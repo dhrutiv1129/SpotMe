@@ -6,6 +6,8 @@ export interface StrengthPoint {
   id: string;
   dateLabel: string;
   value: number;
+  timestamp?: number;
+  gapBefore?: boolean;
 }
 
 interface Props {
@@ -24,9 +26,12 @@ const inset = 6;
 export function StrengthChart({points, minimum, maximum, ticks, dateLabels, accessibilityLabel}: Props) {
   const [width, setWidth] = useState(0);
   const range = maximum - minimum;
+  const firstTime = points[0]?.timestamp;
+  const lastTime = points[points.length - 1]?.timestamp;
+  const timeRange = firstTime !== undefined && lastTime !== undefined ? lastTime - firstTime : 0;
   const positions = points.map((point, index) => ({
     ...point,
-    x: inset + (points.length > 1 ? index / (points.length - 1) : 0.5) * Math.max(0, width - inset * 2),
+    x: inset + (timeRange > 0 && point.timestamp !== undefined ? (point.timestamp - firstTime!) / timeRange : points.length > 1 ? index / (points.length - 1) : 0.5) * Math.max(0, width - inset * 2),
     y: inset + (range > 0 ? 1 - (point.value - minimum) / range : 0.5) * (plotHeight - inset * 2),
   }));
 
@@ -43,6 +48,7 @@ export function StrengthChart({points, minimum, maximum, ticks, dateLabels, acce
             <View key={tick.id} style={[styles.grid, {top: inset + (range > 0 ? 1 - (tick.value - minimum) / range : 0.5) * (plotHeight - inset * 2)}]} />
           ))}
           {width > 0 && positions.slice(1).map((point, index) => {
+            if (point.gapBefore) return null;
             const previous = positions[index];
             const dx = point.x - previous.x;
             const dy = point.y - previous.y;

@@ -144,3 +144,8 @@ thresholds, requires model/runtime downloads, and has not been validated against
 manually labeled exercise videos. Native clients display a browser-only notice.
 See [Form Coach testing and limitations](docs/FORM_COACH_TESTING.md) for setup,
 manual validation, privacy details, and automated checks (`npm run test:form`).
+
+## Developer Documentation
+
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Testing Instructions](backend/TESTING.md)

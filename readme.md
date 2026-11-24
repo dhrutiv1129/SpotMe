@@ -11,6 +11,11 @@ The backend is organized by feature under `com.spotme`, with `SpotMeApplication`
 as its entry point. See the [backend architecture guide](backend/ARCHITECTURE.md)
 for the package map, request flow, and persistence boundaries.
 
+## Documentation
+
+- [User guide](docs/USER_GUIDE.md): step-by-step instructions and reporting problems.
+- Developer setup and API reference are provided below.
+
 ## Run locally
 
 Requires JDK 21+ and Node 24. Run each code block below in a separate terminal,
@@ -102,31 +107,25 @@ The seed catalog is deliberately small. This private beta has no password reset 
 verification; native-device and hosted PostgreSQL verification remain release steps.
 No deployment is performed by adding these files.
 
-## Currently Operational Usecases
+## Currently Operational Use Cases
 
+| Use case | What you can do |
+|---|---|
 | Create an account and sign in | Register with email/password, sign in, restore a valid session, and sign out. |
-
 | Log a workout | Select catalog exercises, enter weight and reps, edit or remove logged sets before saving, and review the workout. |
-
 | Resume a workout draft | Recover logged sets on the same device after reloading and signing into the same account. |
-
 | Save a completed workout | Persist the workout and retry an interrupted save without creating a duplicate. Saving requires a connection to the backend. |
-
 | Review workout history | Browse your saved workouts and open their exercise and set details. |
-
 | View strength progress | Select an exercise to see per-workout estimated one-rep max, training volume, changes from the previous session, and personal records. |
-
 | Find an exercise alternative | Choose available equipment, optionally restrict results to beginner exercises, and select from up to three ranked substitutes. Previously logged sets keep their original exercise. |
-
 | Read exercise instructions | Open the selected exercise's text instructions and equipment requirements. |
+| View consistency | Browse a monthly calendar of saved workouts and open workout details from completed dates. |
 
 The current catalog contains twelve exercises, and all logged weights use pounds
 (lb). History and progress are scoped to the signed-in account.
 
 Editing and deleting **saved** workouts are required for the first beta but are
-not implemented yet. Consistency tracking (calendar, heatmap, and streaks) is
-deferred until after the first beta; its existing services and UI components are
-not connected to the beta app. Weekly-goal persistence, password reset, and email
+not implemented yet. The monthly consistency calendar is available; dedicated heatmap and streak displays are not documented as operational. Weekly-goal persistence, password reset, and email
 verification are also unavailable.
 
 ## Experimental Form Coach

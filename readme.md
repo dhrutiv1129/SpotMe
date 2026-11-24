@@ -119,7 +119,6 @@ No deployment is performed by adding these files.
 | View strength progress | Select an exercise to see per-workout estimated one-rep max, training volume, changes from the previous session, and personal records. |
 | Find an exercise alternative | Choose available equipment, optionally restrict results to beginner exercises, and select from up to three ranked substitutes. Previously logged sets keep their original exercise. |
 | Read exercise instructions | Open the selected exercise's text instructions and equipment requirements. |
-
 | View consistency | Browse a monthly calendar of saved workouts and open workout details from completed dates. |
 
 The current catalog contains twelve exercises, and all logged weights use pounds

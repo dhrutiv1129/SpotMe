@@ -16,8 +16,9 @@ import {
   historyMonthLabel,
   validateWorkouts,
 } from '../state/workoutHistory';
-import { colors } from '../theme';
-import Close from '../assets/history/close.svg';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
+import Close from '../assets/guide/close.svg';
 import { ConsistencyScreen } from './ConsistencyScreen';
 import { WeeklyGoalScreen } from './WeeklyGoalScreen';
 
@@ -105,6 +106,8 @@ export function ConsistencyCalendarScreen({
   onUnauthorized,
   load = loadWorkoutHistory,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -203,7 +206,7 @@ export function ConsistencyCalendarScreen({
               onPress={() => setSelectedDate(null)}
               style={styles.close}
             >
-              <Close accessible={false} />
+              <Close accessible={false} color={colors.ink} />
             </Pressable>
           }
         >
@@ -247,7 +250,7 @@ export function ConsistencyCalendarScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   state: {
     backgroundColor: colors.surface,
     borderRadius: 22,

@@ -12,7 +12,8 @@ import {
 } from '../beta/draft';
 import { Button, Sheet } from '../components/WorkoutControls';
 import { validateSetInput } from '../components/WorkoutForm';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import { WorkoutLogScreen } from './WorkoutLogScreen';
 import { WorkoutPlanScreen } from './WorkoutPlanScreen';
 
@@ -45,6 +46,7 @@ export function ActiveWorkoutScreen({
   onSwap,
   inputs,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [now, setNow] = useState(Date.now);
   const [fullPlan, setFullPlan] = useState(false);
   const [guidance, setGuidance] = useState(false);
@@ -367,11 +369,11 @@ export function ActiveWorkoutScreen({
           title={exercise?.name || 'Exercise guide'}
           onClose={() => setGuidance(false)}
         >
-          <Text>
+          <Text style={styles.guideText}>
             {exercise?.instructions ||
               'Instructions are not available for this exercise yet.'}
           </Text>
-          <Text>
+          <Text style={styles.guideText}>
             Enter external load in lb. Warm up first and stop if you feel pain.
           </Text>
           <Button label="Back to workout" onPress={() => setGuidance(false)} />
@@ -381,8 +383,9 @@ export function ActiveWorkoutScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1 },
   hidden: { display: 'none' },
   error: { color: colors.danger, padding: 16 },
+  guideText: {color: colors.ink, fontSize: 14, lineHeight: 21},
 });

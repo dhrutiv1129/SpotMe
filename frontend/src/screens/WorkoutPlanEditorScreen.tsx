@@ -1,7 +1,8 @@
 import React, {useRef, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Button, NumberField} from '../components/WorkoutControls';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface EditableWorkoutPlan {
   id: string;
@@ -33,6 +34,7 @@ function positiveInteger(value: string) {
 export function WorkoutPlanEditorScreen({
   plan, dateLabel, onSave, onSaved, onCancel,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [savedPlan, setSavedPlan] = useState(plan);
   const [draft, setDraft] = useState(() => createDraft(plan));
   const [busy, setBusy] = useState(false);
@@ -129,7 +131,7 @@ export function WorkoutPlanEditorScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {paddingHorizontal: 22, paddingTop: 24, paddingBottom: 28, gap: 16},
   brandRow: {gap: 24, marginBottom: 4},

@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface StrengthPoint {
   id: string;
@@ -24,6 +25,7 @@ const inset = 6;
 
 /** Shows a chart of strength results from the backend. */
 export function StrengthChart({points, minimum, maximum, ticks, dateLabels, accessibilityLabel}: Props) {
+  const styles = useThemedStyles(createStyles);
   const [width, setWidth] = useState(0);
   const range = maximum - minimum;
   const firstTime = points[0]?.timestamp;
@@ -72,7 +74,7 @@ export function StrengthChart({points, minimum, maximum, ticks, dateLabels, acce
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   chart: {flexDirection: 'row', gap: 12},
   axis: {width: 23, height: plotHeight, position: 'relative'},
   tick: {position: 'absolute', color: colors.muted, fontSize: 10},

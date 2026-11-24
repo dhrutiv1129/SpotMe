@@ -8,8 +8,9 @@ import {
   View,
 } from 'react-native';
 import {Button} from '../components/WorkoutControls';
-import {colors} from '../theme';
-import Back from '../assets/history/back.svg';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
+import Back from '../assets/workout/back.svg';
 
 interface PlanSet {
   id: string;
@@ -64,6 +65,8 @@ const statusLabels = {
 export function WorkoutPlanScreen({
   plan, loading, error, onRetry, onReturnToWorkout, onSelectExercise,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable
@@ -71,7 +74,7 @@ export function WorkoutPlanScreen({
         onPress={onReturnToWorkout}
         style={styles.backButton}
       >
-        <Back accessible={false} />
+        <Back accessible={false} color={colors.ink} />
         <Text style={styles.backLabel}>Back to active workout</Text>
       </Pressable>
 
@@ -172,7 +175,7 @@ export function WorkoutPlanScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 22},
   backButton: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 14},
@@ -184,10 +187,10 @@ const styles = StyleSheet.create({
   body: {color: colors.muted, fontSize: 12, lineHeight: 19},
   state: {paddingVertical: 40, gap: 18},
   sectionTitle: {color: colors.ink, fontSize: 22, fontWeight: '700'},
-  hero: {backgroundColor: colors.ink, borderRadius: 22, padding: 20, gap: 14},
+  hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 14},
   between: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
   eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700'},
-  heroCount: {color: colors.surface, fontSize: 13},
+  heroCount: {color: colors.onHero, fontSize: 13},
   heroNote: {color: '#B6C4B4', fontSize: 12, lineHeight: 19},
   segments: {flexDirection: 'row', gap: 4},
   segment: {flex: 1, height: 4, borderRadius: 4, backgroundColor: '#354B3C'},

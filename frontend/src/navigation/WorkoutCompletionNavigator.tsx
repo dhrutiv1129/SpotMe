@@ -6,7 +6,8 @@ import {WorkoutReviewScreen} from '../screens/WorkoutReviewScreen';
 import type {WorkoutReview} from '../screens/WorkoutReviewScreen';
 import {WorkoutSavedScreen} from '../screens/WorkoutSavedScreen';
 import type {SavedWorkoutReceipt} from '../screens/WorkoutSavedScreen';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 interface Props {
   workout: WorkoutReview;
@@ -24,6 +25,8 @@ export function WorkoutCompletionNavigator(props: Props) {
 }
 
 function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnToTrain, onViewHistory}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [receipt, setReceipt] = useState<SavedWorkoutReceipt | null>(null);
   const [detail, setDetail] = useState<WorkoutDetailView | null>(null);
   const [loading, setLoading] = useState(false);
@@ -95,7 +98,7 @@ function CompletionFlow({workout, onSave, loadWorkout, onKeepTraining, onReturnT
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   loading: {padding: 12},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19, padding: 16},

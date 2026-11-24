@@ -4,7 +4,8 @@ import CalendarCheck from '../assets/consistency/calendar-check.svg';
 import Flame from '../assets/consistency/flame.svg';
 import {CalendarView} from '../components/CalendarView';
 import type {WorkoutCalendar} from '../components/CalendarView';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface ConsistencyView {
   monthlyCountLabel: string;
@@ -30,6 +31,8 @@ interface Props {
 export function ConsistencyScreen({
   consistency, selectedDate, onViewStrength, onViewHistory, onEditGoal, onChangeMonth, onViewDay, state,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -52,14 +55,14 @@ export function ConsistencyScreen({
         <View style={styles.metric}>
           <View style={styles.metricHeading}>
             <Text style={styles.value}>{consistency.monthlyCountLabel}</Text>
-            <CalendarCheck accessible={false} />
+            <CalendarCheck accessible={false} color={colors.green} />
           </View>
           <Text style={styles.caption}>{consistency.monthlyDescription}</Text>
         </View>
         <View style={styles.metric}>
           <View style={styles.metricHeading}>
             <Text style={styles.value}>{consistency.streakCountLabel}</Text>
-            <Flame accessible={false} />
+            <Flame accessible={false} color={colors.green} />
           </View>
           <Text style={styles.caption}>{consistency.streakDescription}</Text>
         </View>
@@ -76,7 +79,7 @@ export function ConsistencyScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},

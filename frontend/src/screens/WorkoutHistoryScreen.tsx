@@ -3,7 +3,8 @@ import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Back from '../assets/history/back.svg';
 import Next from '../assets/history/next.svg';
 import {Button} from '../components/WorkoutControls';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface WorkoutHistoryView {
   monthLabel: string;
@@ -40,10 +41,12 @@ interface Props {
 
 /** Shows workout dates and totals returned by the backend. */
 export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore, backLabel = 'Progress', filters, empty}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
-        <Back accessible={false} />
+        <Back accessible={false} color={colors.ink} />
         <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
@@ -85,7 +88,7 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
                 <Text style={styles.caption}>{session.description}</Text>
                 <Text style={[styles.caption, session.highlighted && styles.highlight]}>{session.detailLabel}</Text>
               </View>
-              <Next accessible={false} />
+              <Next accessible={false} color={colors.muted} />
             </Pressable>
           ))}
         </View>
@@ -95,7 +98,7 @@ export function WorkoutHistoryScreen({history, onBack, onViewSession, onLoadMore
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},

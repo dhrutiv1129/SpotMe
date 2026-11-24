@@ -2,7 +2,8 @@ import React, {useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import {WorkoutPlanNavigator} from './WorkoutPlanNavigator';
 import {WorkoutSessionNavigator} from './WorkoutSessionNavigator';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import {useWorkoutSession} from '../state/useWorkoutSession';
 import type {WorkoutSessionSource} from '../state/useWorkoutSession';
 
@@ -19,6 +20,8 @@ interface Props {
 
 /** Starts the workout and keeps the training screens updated after changes. */
 export function TrainNavigator({plan, source, session}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {workout, startWorkout, refreshWorkout, clearWorkout} = useWorkoutSession(source);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +109,7 @@ export function TrainNavigator({plan, source, session}: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   hidden: {display: 'none'},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19, padding: 16},

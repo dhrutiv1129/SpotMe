@@ -15,7 +15,8 @@ import {
   historyMonthLabel,
 } from '../state/workoutHistory';
 import type { HistoryFilters } from '../state/workoutHistory';
-import { colors } from '../theme';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Button, Sheet } from './WorkoutControls';
 import Close from '../assets/history/close.svg';
 import Calendar from '../assets/history/calendar.svg';
@@ -38,6 +39,8 @@ export function WorkoutHistoryFilters({
   onOpen,
   onApply,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [month, setMonth] = useState(filters.month || currentHistoryMonth());
   const [staged, setStaged] = useState(filters);
   const [search, setSearch] = useState('');
@@ -69,7 +72,7 @@ export function WorkoutHistoryFilters({
       onPress={() => onOpen(null)}
       style={styles.close}
     >
-      <Close accessible={false} />
+      <Close accessible={false} color={colors.ink} />
     </Pressable>
   );
   return (
@@ -81,11 +84,11 @@ export function WorkoutHistoryFilters({
           onPress={() => onOpen('month')}
           style={styles.month}
         >
-          <Calendar accessible={false} />
+          <Calendar accessible={false} color={colors.green} />
           <Text style={styles.monthLabel}>
             {historyMonthLabel(filters.month)}
           </Text>
-          <ChevronDown accessible={false} />
+          <ChevronDown accessible={false} color={colors.ink} />
         </Pressable>
         <View style={styles.chips}>
           {filters.exerciseId !== null && (
@@ -183,7 +186,7 @@ export function WorkoutHistoryFilters({
           <TextInput
             accessibilityLabel="Search exercise filters"
             placeholder="Search exercises"
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={colors.muted} selectionColor={colors.green}
             value={search}
             onChangeText={setSearch}
             style={styles.input}
@@ -221,7 +224,7 @@ export function WorkoutHistoryFilters({
                     field === 'from' ? 'History start date' : 'History end date'
                   }
                   placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={colors.muted} selectionColor={colors.green}
                   value={staged[field]}
                   onChangeText={(value) =>
                     setStaged({ ...staged, [field]: value })
@@ -278,6 +281,7 @@ function FilterChip({
   selected?: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -292,7 +296,7 @@ function FilterChip({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   controls: { gap: 12 },
   month: {
     minHeight: 48,

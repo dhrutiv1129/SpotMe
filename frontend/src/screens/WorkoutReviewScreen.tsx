@@ -4,7 +4,8 @@ import Back from '../assets/workout/back.svg';
 import {Button} from '../components/WorkoutControls';
 import type {LoggedSet} from '../components/ExerciseRow';
 import type {SavedWorkoutReceipt} from './WorkoutSavedScreen';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface WorkoutReview {
   sessionId: string;
@@ -34,6 +35,8 @@ interface Props {
 
 /** Shows logged sets for review. Drafts stay in the workout form. */
 export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved, pending}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const writeInFlight = useRef(false);
@@ -61,7 +64,7 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved, p
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" disabled={busy || pending} onPress={onKeepTraining} style={styles.back}>
-        <Back accessible={false} />
+        <Back accessible={false} color={colors.ink} />
         <Text style={styles.header}>Your workout</Text>
       </Pressable>
       <Text accessibilityRole="header" style={styles.title}>Review & finish</Text>
@@ -92,7 +95,7 @@ export function WorkoutReviewScreen({workout, onKeepTraining, onSave, onSaved, p
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44},
@@ -100,11 +103,11 @@ const styles = StyleSheet.create({
   title: {color: colors.ink, fontSize: 32, lineHeight: 36, fontWeight: '700', letterSpacing: -1.2},
   body: {color: colors.muted, fontSize: 11, lineHeight: 16},
   summary: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
-  workoutName: {color: colors.surface, fontSize: 27, fontWeight: '700', letterSpacing: -0.8},
+  workoutName: {color: colors.onHero, fontSize: 27, fontWeight: '700', letterSpacing: -0.8},
   metrics: {flexDirection: 'row', gap: 18},
   summaryItem: {flex: 1, gap: 5},
-  value: {color: colors.surface, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
-  heroCaption: {color: '#C1CCBD', fontSize: 12},
+  value: {color: colors.onHero, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
+  heroCaption: {color: colors.heroMuted, fontSize: 12},
   exercises: {gap: 12},
   sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700', letterSpacing: -0.4},
   exercise: {backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 9},

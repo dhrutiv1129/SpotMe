@@ -2,7 +2,8 @@ import React from 'react';
 import {Modal, Pressable, StyleSheet, Text, View} from 'react-native';
 import Close from '../assets/history/close.svg';
 import type {WorkoutDetailView} from '../screens/WorkoutDetailScreen';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import {Button} from './WorkoutControls';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 
 /** Shows the saved workout for the selected calendar day. */
 export function CalendarDaySheet({workout, onClose, onViewWorkout}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -22,7 +25,7 @@ export function CalendarDaySheet({workout, onClose, onViewWorkout}: Props) {
           <View style={styles.heading}>
             <Text accessibilityRole="header" style={styles.title}>{workout.dateLabel}</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Close day details" onPress={onClose} style={styles.close}>
-              <Close accessible={false} />
+              <Close accessible={false} color={colors.ink} />
             </Pressable>
           </View>
           <View style={styles.summary}>
@@ -37,10 +40,10 @@ export function CalendarDaySheet({workout, onClose, onViewWorkout}: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13, 26, 18, 0.38)'},
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay},
   sheet: {backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 34, gap: 16},
-  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: '#D6D9D2', alignSelf: 'center'},
+  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: colors.handle, alignSelf: 'center'},
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, fontWeight: '700', lineHeight: 33, letterSpacing: -1.1},
   close: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},

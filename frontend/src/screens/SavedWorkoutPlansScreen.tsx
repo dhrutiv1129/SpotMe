@@ -3,7 +3,8 @@ import {ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, T
 import Brand from '../assets/train/brand.svg';
 import Play from '../assets/train/play.svg';
 import {Button} from '../components/WorkoutControls';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface SavedWorkoutPlanView {
   id: string;
@@ -35,6 +36,8 @@ interface Props {
 
 /** Shows the saved plan before editing it or starting a workout. */
 export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditPlan, onCreateWorkout, editLabel = 'Edit plan', loading, loadError, onRetry, disabled, unfinishedWorkout, onResumeWorkout}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const startingRef = useRef(false);
@@ -113,7 +116,7 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
           </View>
           <Pressable accessibilityRole="button" accessibilityState={{disabled: locked || !!unfinishedWorkout, busy: starting}} disabled={locked || !!unfinishedWorkout} onPress={() => {void start();}} style={({pressed}) => [styles.start, (pressed || locked || !!unfinishedWorkout) && styles.dimmed]}>
             <Text style={styles.startLabel}>{starting ? 'Starting workout…' : 'Start workout'}</Text>
-            {starting ? <ActivityIndicator color={colors.surface} /> : <Play accessible={false} />}
+            {starting ? <ActivityIndicator color={colors.onPrimary} /> : <Play accessible={false} />}
           </Pressable>
         </View>
       </View>
@@ -130,12 +133,12 @@ export function SavedWorkoutPlansScreen({plan, initials, onStartWorkout, onEditP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   identity: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  brandMark: {width: 32, height: 32, backgroundColor: colors.green, borderRadius: 11, alignItems: 'center', justifyContent: 'center'},
+  brandMark: {width: 32, height: 32, backgroundColor: colors.primary, borderRadius: 11, alignItems: 'center', justifyContent: 'center'},
   brand: {color: colors.ink, fontSize: 23, fontWeight: '700'},
   avatar: {width: 36, height: 36, backgroundColor: colors.pale, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
   initials: {color: colors.green, fontSize: 12},
@@ -145,17 +148,17 @@ const styles = StyleSheet.create({
   scrim: {backgroundImage: 'linear-gradient(to right, rgba(20,38,31,0.95), rgba(20,38,31,0.13))'},
   badge: {alignSelf: 'flex-start', backgroundColor: '#304438', borderRadius: 100, paddingHorizontal: 10, paddingVertical: 6, color: colors.lime, fontSize: 11, fontWeight: '700'},
   planHeading: {gap: 7},
-  planName: {color: colors.surface, fontSize: 29, fontWeight: '700'},
-  summary: {color: '#F7F9EF', fontSize: 12},
+  planName: {color: colors.onHero, fontSize: 29, fontWeight: '700'},
+  summary: {color: colors.onHero, fontSize: 12},
   planContent: {padding: 18, gap: 15},
   exercises: {gap: 12},
   exercise: {flexDirection: 'row', alignItems: 'center', gap: 12},
   order: {color: colors.lime, fontSize: 11, fontWeight: '600'},
-  exerciseName: {flex: 1, color: '#F7F9EF', fontSize: 14},
-  target: {color: '#B7C6B9', fontSize: 12},
-  remaining: {color: '#B7C6B9', fontSize: 11},
-  start: {minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10},
-  startLabel: {color: colors.surface, fontSize: 15, fontWeight: '700'},
+  exerciseName: {flex: 1, color: colors.onHero, fontSize: 14},
+  target: {color: colors.heroMuted, fontSize: 12},
+  remaining: {color: colors.heroMuted, fontSize: 11},
+  start: {minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10},
+  startLabel: {color: colors.onPrimary, fontSize: 15, fontWeight: '700'},
   dimmed: {opacity: 0.75},
   create: {minHeight: 44, alignItems: 'center', justifyContent: 'center'},
   createLabel: {color: colors.ink, fontSize: 14, fontWeight: '700'},
@@ -167,6 +170,6 @@ const styles = StyleSheet.create({
   resumeSection: {gap: 12},
   resumeCard: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
   resumeBadge: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3},
-  resumeTitle: {color: colors.surface, fontSize: 27, fontWeight: '700', letterSpacing: -0.8},
-  resumeBody: {color: '#B7C6B9', fontSize: 13, lineHeight: 20},
+  resumeTitle: {color: colors.onHero, fontSize: 27, fontWeight: '700', letterSpacing: -0.8},
+  resumeBody: {color: colors.heroMuted, fontSize: 13, lineHeight: 20},
 });

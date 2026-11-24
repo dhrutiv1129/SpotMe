@@ -1,10 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import Back from '../assets/history/back.svg';
+import Back from '../assets/workout/back.svg';
 import DayCheck from '../assets/goal/day-check.svg';
 import Calendar from '../assets/goal/calendar.svg';
 import SaveCheck from '../assets/goal/save-check.svg';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface WeeklyGoalView {
   workoutsPerWeek: number;
@@ -29,6 +30,8 @@ interface Props {
 
 /** Edits the weekly goal without changing the current week's results. */
 export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [selected, setSelected] = useState<number | null>(goal?.workoutsPerWeek ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to Consistency" disabled={saving} onPress={close} style={styles.back}>
-          <Back accessible={false} />
+          <Back accessible={false} color={colors.ink} />
           <Text style={styles.headerLabel}>Edit weekly goal</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={saving} onPress={close} style={styles.cancel}>
@@ -108,20 +111,20 @@ export function WeeklyGoalScreen({goal, onSave, onClose}: Props) {
         </View>
       </View>
       <View style={styles.guidance}>
-        <Calendar accessible={false} />
+        <Calendar accessible={false} color={colors.green} />
         <Text style={styles.effectiveDate}>{goal?.effectiveDateLabel || 'Start date unavailable'}</Text>
       </View>
       {!onSave && <Text style={styles.caption}>Goal saving is not available yet. Your selection will not be saved.</Text>}
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       <Pressable accessibilityRole="button" accessibilityState={{disabled: !canSave, busy: saving}} disabled={!canSave} onPress={() => {void save();}} style={[styles.save, !canSave && styles.disabled]}>
-        {saving ? <ActivityIndicator color={colors.surface} /> : <SaveCheck accessible={false} />}
+        {saving ? <ActivityIndicator color={colors.onPrimary} /> : <SaveCheck accessible={false} />}
         <Text style={styles.saveLabel}>{saving ? 'Saving goal…' : error ? 'Retry saving goal' : 'Save goal'}</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
@@ -137,8 +140,8 @@ const styles = StyleSheet.create({
   days: {flexDirection: 'row', justifyContent: 'space-between', gap: 4},
   day: {alignItems: 'center', gap: 7},
   circle: {width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center'},
-  completed: {backgroundColor: colors.green, borderColor: colors.green},
-  rest: {backgroundColor: '#D6E4D0', borderColor: '#D6E4D0'},
+  completed: {backgroundColor: colors.primary, borderColor: colors.primary},
+  rest: {backgroundColor: colors.activityLight, borderColor: colors.activityLight},
   date: {color: colors.muted, fontSize: 11},
   restText: {color: colors.green},
   weekday: {color: colors.muted, fontSize: 10},
@@ -149,13 +152,13 @@ const styles = StyleSheet.create({
   unit: {color: colors.muted, fontSize: 14},
   choices: {flexDirection: 'row', gap: 6},
   choice: {flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center'},
-  selected: {backgroundColor: colors.green, borderColor: colors.green},
+  selected: {backgroundColor: colors.primary, borderColor: colors.primary},
   choiceLabel: {color: colors.ink, fontSize: 15, fontWeight: '600'},
-  lightText: {color: colors.surface},
+  lightText: {color: colors.onPrimary},
   guidance: {backgroundColor: colors.pale, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12},
   effectiveDate: {flex: 1, color: colors.ink, fontSize: 14, fontWeight: '700'},
-  save: {minHeight: 54, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10},
-  saveLabel: {color: colors.surface, fontSize: 15, fontWeight: '700'},
+  save: {minHeight: 54, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10},
+  saveLabel: {color: colors.onPrimary, fontSize: 15, fontWeight: '700'},
   disabled: {opacity: 0.45},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},
 });

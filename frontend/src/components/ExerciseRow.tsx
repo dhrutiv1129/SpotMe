@@ -1,6 +1,7 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import {SetRow} from './SetRow';
 
 export interface LoggedSet {
@@ -47,6 +48,7 @@ export function ExerciseRow({
   exercise, weight, reps, weightError, repsError, disabled,
   onWeightChange, onRepsChange, onEditSet, onSwap, onGuide, onLog, canLog,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.between}>
@@ -59,7 +61,7 @@ export function ExerciseRow({
           disabled={disabled}
           onPress={() => onSwap(exercise.id)}
         >
-          <Text style={styles.link}>Swap exercise ⇄</Text>
+          <Text style={styles.link}>Find alternatives ⇄</Text>
         </Pressable>
       </View>
       <Text accessibilityRole="header" style={styles.title}>{exercise.name}</Text>
@@ -127,7 +129,7 @@ export function ExerciseRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {gap: 16},
   between: {
     flexDirection: 'row',

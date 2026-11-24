@@ -1,9 +1,11 @@
 import React from 'react';
 import {Platform, StyleSheet, View, useWindowDimensions} from 'react-native';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 /**Give desktop recordings a phone viewport; native and small screens stay full size. */
 export function PhonePreview({children}: {children: React.ReactNode}) {
+  const styles = useThemedStyles(createStyles);
   const {width, height} = useWindowDimensions();
   if (Platform.OS !== 'web' || width < 480) return <>{children}</>;
 
@@ -20,12 +22,12 @@ export function PhonePreview({children}: {children: React.ReactNode}) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   stage: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DEE4DE',
+    backgroundColor: colors.preview,
     padding: 16,
   },
   device: {
@@ -33,7 +35,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     borderRadius: 44,
     borderWidth: 8,
-    borderColor: '#18211C',
+    borderColor: colors.device,
     backgroundColor: colors.background,
     boxShadow: '0 20px 60px rgba(20, 35, 26, 0.2)',
     overflow: 'hidden',
@@ -46,7 +48,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#18211C',
+    backgroundColor: colors.ink,
   },
   homeIndicator: {
     position: 'absolute',
@@ -55,6 +57,6 @@ const styles = StyleSheet.create({
     width: 110,
     height: 4,
     borderRadius: 3,
-    backgroundColor: '#18211C',
+    backgroundColor: colors.ink,
   },
 });

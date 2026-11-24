@@ -5,7 +5,8 @@ import type { Exercise, Progress, Workout } from '../beta/api';
 import { StrengthExerciseSelector } from '../components/StrengthExerciseSelector';
 import { Button } from '../components/WorkoutControls';
 import { buildStrengthProgress } from '../state/strengthProgress';
-import { colors } from '../theme';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
 import { ProgressScreen } from './ProgressScreen';
 import type { StrengthProgressView } from './ProgressScreen';
 
@@ -59,6 +60,8 @@ export function StrengthProgressScreen({
   onUnauthorized,
   load = loadStrengthData,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const selectedId = catalog.some((exercise) => exercise.id === exerciseId)
     ? exerciseId!
     : catalog[0]?.id;
@@ -221,7 +224,7 @@ export function StrengthProgressScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   state: {
     width: '100%',

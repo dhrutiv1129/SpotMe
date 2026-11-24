@@ -2,7 +2,8 @@ import React from 'react';
 import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
 import Check from '../assets/workout/check.svg';
 import Plus from '../assets/workout/plus.svg';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 interface BaseProps {
   number: number;
@@ -30,6 +31,8 @@ interface DraftProps extends BaseProps {
 
 /** Controlled row: drafts become logged sets only after an API response. */
 export function SetRow(props: LoggedProps | DraftProps) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (props.completed) {
     return (
       <Pressable
@@ -58,6 +61,7 @@ export function SetRow(props: LoggedProps | DraftProps) {
         value={props.weight}
         onChangeText={props.onWeightChange}
         accessibilityHint={props.weightError}
+        selectionColor={colors.green}
         editable={!props.disabled}
         keyboardType="decimal-pad"
         selectTextOnFocus
@@ -68,13 +72,14 @@ export function SetRow(props: LoggedProps | DraftProps) {
         value={props.reps}
         onChangeText={props.onRepsChange}
         accessibilityHint={props.repsError}
+        selectionColor={colors.green}
         editable={!props.disabled}
         keyboardType="number-pad"
         selectTextOnFocus
         style={[styles.input, !!props.repsError && styles.invalid]}
       />
       <Pressable accessibilityRole="button" accessibilityLabel={`Log set ${props.number}`} accessibilityState={{disabled: props.disabled || !props.canLog}} disabled={props.disabled || !props.canLog} onPress={props.onLog} style={styles.add}>
-        <Plus accessible={false} />
+        <Plus accessible={false} color={colors.green} />
       </Pressable>
     </View>
     {!!props.weightError && <Text accessibilityRole="alert" style={styles.error}>{props.weightError}</Text>}
@@ -83,7 +88,7 @@ export function SetRow(props: LoggedProps | DraftProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   loggedRow: {
     minHeight: 60,
     flexDirection: 'row',
@@ -104,12 +109,12 @@ const styles = StyleSheet.create({
   check: {
     width: 36,
     height: 36,
-    backgroundColor: colors.green,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
   },
-  checkText: {fontSize: 22, color: colors.surface},
+  checkText: {fontSize: 22, color: colors.onPrimary},
   fieldGroup: {gap: 6},
   input: {flex: 1, minWidth: 0, height: 44, backgroundColor: colors.background, color: colors.ink, borderRadius: 8, borderWidth: 1, borderColor: colors.border, textAlign: 'center', fontSize: 18, paddingHorizontal: 4},
   invalid: {borderColor: colors.danger},

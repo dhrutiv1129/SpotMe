@@ -11,7 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 interface ButtonProps {
   label: string;
@@ -28,6 +29,8 @@ export function Button({
   disabled,
   busy,
 }: ButtonProps) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const filled = variant === 'primary' || variant === 'danger';
   return (
     <Pressable
@@ -37,13 +40,13 @@ export function Button({
       onPress={onPress}
       style={({pressed}) => [
         styles.button,
-        buttonStyles[variant],
+        styles[variant],
         (disabled || busy) && styles.disabled,
         pressed && styles.pressed,
       ]}
     >
       {busy && (
-        <ActivityIndicator color={filled ? colors.surface : colors.green} />
+        <ActivityIndicator color={filled ? colors.onPrimary : colors.green} />
       )}
       <Text style={[styles.buttonText, filled && styles.lightText]}>
         {label}
@@ -69,6 +72,8 @@ export function NumberField({
   disabled,
   integer,
 }: NumberFieldProps) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -80,6 +85,8 @@ export function NumberField({
         keyboardType={integer ? 'number-pad' : 'decimal-pad'}
         editable={!disabled}
         selectTextOnFocus
+        selectionColor={colors.green}
+        placeholderTextColor={colors.muted}
         style={[styles.input, !!error && styles.invalid]}
       />
       {!!error && (
@@ -100,6 +107,7 @@ interface SheetProps {
 }
 
 export function Sheet({title, onClose, locked, children, headerAction}: SheetProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal
       visible
@@ -137,7 +145,7 @@ export function Sheet({title, onClose, locked, children, headerAction}: SheetPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     minHeight: 54,
     borderRadius: 16,
@@ -148,13 +156,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  primary: {backgroundColor: colors.green},
+  primary: {backgroundColor: colors.primary},
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  danger: {backgroundColor: colors.danger},
+  danger: {backgroundColor: colors.dangerSolid},
   text: {backgroundColor: 'transparent'},
   buttonText: {
     fontSize: 15,
@@ -162,7 +170,7 @@ const styles = StyleSheet.create({
     color: colors.green,
     textAlign: 'center',
   },
-  lightText: {color: colors.surface},
+  lightText: {color: colors.onPrimary},
   disabled: {opacity: 0.45},
   pressed: {opacity: 0.75},
   field: {gap: 6, flex: 1},
@@ -181,7 +189,7 @@ const styles = StyleSheet.create({
   error: {fontSize: 12, color: colors.danger},
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(22, 39, 28, 0.42)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -194,7 +202,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 44,
     height: 4,
-    backgroundColor: '#D6D9D0',
+    backgroundColor: colors.handle,
     borderRadius: 4,
     alignSelf: 'center',
     marginBottom: 18,
@@ -209,10 +217,3 @@ const styles = StyleSheet.create({
   sheetHeading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   sheetHeadingTitle: {flex: 1},
 });
-
-const buttonStyles = {
-  primary: styles.primary,
-  secondary: styles.secondary,
-  danger: styles.danger,
-  text: styles.text,
-};

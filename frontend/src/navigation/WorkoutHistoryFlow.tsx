@@ -16,7 +16,8 @@ import {
   validHistoryDate,
 } from '../state/workoutHistory';
 import type { HistoryFilters, HistoryBrowseState } from '../state/workoutHistory';
-import { colors } from '../theme';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
 
 export async function loadWorkoutHistory() {
   return validateWorkouts(await api<Workout[]>('/workouts'));
@@ -102,6 +103,8 @@ export function WorkoutHistoryFlow({
   loadHistory = loadWorkoutHistory,
   loadDetail = loadWorkoutDetail,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [historyReady, setHistoryReady] = useState(false);
   const {filters, limit} = browseState;
@@ -189,7 +192,7 @@ export function WorkoutHistoryFlow({
     history.sections.length === 0 ? (
       <View style={styles.empty}>
         <View style={styles.emptyIcon}>
-          <Search accessible={false} />
+          <Search accessible={false} color={colors.green} />
         </View>
         <Text accessibilityRole="header" style={styles.emptyTitle}>
           {workouts.length ? 'No matching workouts' : 'Your story starts here.'}
@@ -309,7 +312,7 @@ export function WorkoutHistoryFlow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1 },
   state: {
     width: '100%',

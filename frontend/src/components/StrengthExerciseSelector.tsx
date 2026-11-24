@@ -1,10 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
-import Close from '../assets/history/close.svg';
+import Close from '../assets/guide/close.svg';
 import Search from '../assets/strength/search.svg';
 import Exercise from '../assets/strength/option.svg';
 import Selected from '../assets/strength/selected.svg';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface StrengthExerciseOption {
   id: string;
@@ -21,6 +22,8 @@ interface Props {
 
 /** Finds exercises and opens strength results for the selected exercise. */
 export function StrengthExerciseSelector({selectedExerciseId, searchExercises, onSelect, onClose}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly StrengthExerciseOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,23 +98,23 @@ export function StrengthExerciseSelector({selectedExerciseId, searchExercises, o
             <View style={styles.heading}>
               <Text accessibilityRole="header" style={styles.title}>Choose exercise</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Close exercise selector" disabled={selecting} onPress={close} style={styles.close}>
-                <Close accessible={false} />
+                <Close accessible={false} color={colors.ink} />
               </Pressable>
             </View>
             <View style={styles.search}>
-              <Search accessible={false} />
-              <TextInput accessibilityLabel="Search exercises" placeholder="Search exercises" placeholderTextColor={colors.muted} value={query} editable={!selecting} onChangeText={setQuery} autoCapitalize="none" autoCorrect={false} style={styles.input} />
+              <Search accessible={false} color={colors.ink} />
+              <TextInput accessibilityLabel="Search exercises" placeholder="Search exercises" placeholderTextColor={colors.muted} selectionColor={colors.green} value={query} editable={!selecting} onChangeText={setQuery} autoCapitalize="none" autoCorrect={false} style={styles.input} />
             </View>
             {loading && <ActivityIndicator accessibilityLabel="Searching exercises" color={colors.green} />}
             <View accessibilityRole="radiogroup" accessibilityLabel="Strength exercise" style={styles.options}>
               {options.map((exercise) => (
                 <Pressable key={exercise.id} accessibilityRole="radio" accessibilityLabel={`${exercise.name}, ${exercise.description}`} accessibilityState={{checked: exercise.id === selectedExerciseId, disabled: selecting || loading}} disabled={selecting || loading} onPress={() => {void select(exercise.id);}} style={[styles.option, exercise.id === selectedExerciseId && styles.selected]}>
-                  <Exercise accessible={false} />
+                  <Exercise accessible={false} color={colors.green} />
                   <View style={styles.info}>
                     <Text style={styles.name}>{exercise.name}</Text>
                     <Text style={styles.description}>{exercise.description}</Text>
                   </View>
-                  {exercise.id === selectedExerciseId ? <Selected accessible={false} /> : <View style={styles.unselected} />}
+                  {exercise.id === selectedExerciseId ? <Selected accessible={false} color={colors.green} /> : <View style={styles.unselected} />}
                 </Pressable>
               ))}
             </View>
@@ -128,10 +131,10 @@ export function StrengthExerciseSelector({selectedExerciseId, searchExercises, o
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13, 26, 18, 0.38)'},
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  overlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay},
   sheet: {maxHeight: '92%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 16},
-  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: '#D6D9D2', alignSelf: 'center', marginBottom: 16},
+  handle: {width: 44, height: 4, borderRadius: 2, backgroundColor: colors.handle, alignSelf: 'center', marginBottom: 16},
   content: {paddingHorizontal: 22, paddingBottom: 34, gap: 16},
   heading: {flexDirection: 'row', alignItems: 'center', gap: 12},
   title: {flex: 1, color: colors.ink, fontSize: 30, lineHeight: 33, fontWeight: '700', letterSpacing: -1.1},
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
   info: {flex: 1, gap: 3},
   name: {color: colors.ink, fontSize: 14, fontWeight: '700', lineHeight: 20},
   description: {color: colors.muted, fontSize: 11, lineHeight: 16},
-  unselected: {width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: '#C9D4C7'},
+  unselected: {width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.border},
   cancel: {minHeight: 54, borderWidth: 1, borderColor: colors.border, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16},
   cancelLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19},

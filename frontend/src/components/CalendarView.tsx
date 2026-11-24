@@ -2,7 +2,8 @@ import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import PreviousMonth from '../assets/consistency/previous.svg';
 import NextMonth from '../assets/consistency/next.svg';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface CalendarDay {
   date: string;
@@ -33,6 +34,8 @@ const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /** Shows workout dates and activity levels returned by the backend. */
 export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <View style={styles.heading}>
@@ -45,7 +48,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
             onPress={() => {if (calendar.previousMonthId) onChangeMonth(calendar.previousMonthId);}}
             style={[styles.monthButton, !calendar.previousMonthId && styles.disabled]}
           >
-            <PreviousMonth accessible={false} />
+            <PreviousMonth accessible={false} color={colors.ink} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -54,7 +57,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
             onPress={() => {if (calendar.nextMonthId) onChangeMonth(calendar.nextMonthId);}}
             style={[styles.monthButton, !calendar.nextMonthId && styles.disabled]}
           >
-            <NextMonth accessible={false} />
+            <NextMonth accessible={false} color={colors.muted} />
           </Pressable>
         </View>
       </View>
@@ -74,7 +77,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
                 onPress={() => onViewDay(day.date, day.sessionIds)}
                 style={styles.cell}
               >
-                <View style={[styles.date, activityStyles[day.activity], day.isToday && styles.today, day.date === selectedDate && styles.selected]}>
+                <View style={[styles.date, styles[day.activity], day.isToday && styles.today, day.date === selectedDate && styles.selected]}>
                   <Text style={[styles.dateText, day.activity === 'high' && styles.highText, day.isFuture && styles.futureText]}>{day.dayLabel}</Text>
                 </View>
               </Pressable>
@@ -96,7 +99,7 @@ export function CalendarView({calendar, selectedDate, onChangeMonth, onViewDay}:
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {backgroundColor: colors.surface, borderRadius: 22, padding: 18, gap: 12},
   heading: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10},
   title: {color: colors.ink, fontSize: 18, fontWeight: '700', flex: 1},
@@ -111,11 +114,11 @@ const styles = StyleSheet.create({
   date: {width: 32, height: 32, borderRadius: 11, borderWidth: 1.5, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center'},
   dateText: {color: colors.ink, fontSize: 12},
   none: {backgroundColor: colors.surface},
-  light: {backgroundColor: '#D6E8CC'},
-  medium: {backgroundColor: '#7DB27D'},
-  high: {backgroundColor: colors.green},
-  highText: {color: colors.surface, fontWeight: '700'},
-  futureText: {color: '#9AA196'},
+  light: {backgroundColor: colors.activityLight},
+  medium: {backgroundColor: colors.activityMedium},
+  high: {backgroundColor: colors.primary},
+  highText: {color: colors.onPrimary, fontWeight: '700'},
+  futureText: {color: colors.disabledText},
   today: {borderColor: colors.green},
   selected: {borderWidth: 2, borderColor: colors.ink},
   legend: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2},
@@ -123,10 +126,3 @@ const styles = StyleSheet.create({
   swatch: {width: 12, height: 8, borderRadius: 2},
   todayLegend: {width: 13, height: 13, borderRadius: 7, borderWidth: 1, borderColor: colors.ink},
 });
-
-const activityStyles = {
-  none: styles.none,
-  light: styles.light,
-  medium: styles.medium,
-  high: styles.high,
-};

@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { StrengthChart } from '../components/StrengthChart';
 import type { StrengthPoint } from '../components/StrengthChart';
-import { colors } from '../theme';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Button } from '../components/WorkoutControls';
 import Dumbbell from '../assets/strength/dumbbell.svg';
 import ChevronDown from '../assets/strength/chevron-down.svg';
@@ -85,6 +86,8 @@ export function ProgressScreen({
   onViewSession,
   onTrain,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const weightScale = Math.max(
     progress.actualSet?.weight || 0,
     progress.estimatedSet?.weight || 0,
@@ -139,16 +142,16 @@ export function ProgressScreen({
           onPress={onChooseExercise}
           style={styles.exercisePicker}
         >
-          <Dumbbell accessible={false} />
+          <Dumbbell accessible={false} color={colors.green} />
           <Text style={styles.exerciseName}>{progress.exerciseName}</Text>
-          <ChevronDown accessible={false} />
+          <ChevronDown accessible={false} color={colors.ink} />
         </Pressable>
         <Text style={styles.period}>{progress.periodLabel}</Text>
       </View>
       {empty ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIcon}>
-            <EmptyExercise accessible={false} />
+            <EmptyExercise accessible={false} color={colors.green} />
           </View>
           <Text accessibilityRole="header" style={styles.emptyTitle}>
             No workouts yet
@@ -262,7 +265,7 @@ export function ProgressScreen({
               <View style={styles.performanceCard}>
                 <View style={styles.recordLabel}>
                   {!single && (
-                    <Trophy accessible={false} />
+                    <Trophy accessible={false} color={colors.green} />
                   )}
                   <Text style={styles.caption}>
                     {progress.recordTitle || 'Personal best'}
@@ -311,7 +314,7 @@ export function ProgressScreen({
                       <Text style={styles.singleDate}>
                         {session.fullDateLabel || session.dateLabel}
                       </Text>
-                      <Next accessible={false} />
+                      <Next accessible={false} color={colors.muted} />
                     </View>
                     <Text style={styles.caption}>Saved workout</Text>
                     <Text style={styles.firstSession}>
@@ -338,7 +341,7 @@ export function ProgressScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',
@@ -471,7 +474,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#DCE7D8',
+    borderColor: colors.border,
     padding: 12,
     gap: 8,
   },

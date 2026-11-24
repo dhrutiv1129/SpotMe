@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import {ExerciseRow} from './ExerciseRow';
 import type {ExerciseView, LoggedSet} from './ExerciseRow';
 import {Button} from './WorkoutControls';
@@ -47,6 +48,7 @@ export function WorkoutForm({
   exercise, weight, reps, disabled, busy, error,
   onWeightChange, onRepsChange, onEditSet, onSwap, onGuide, onSubmit,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [touched, setTouched] = useState(false);
   const errors = validateSetInput(weight, reps);
   const invalid = !!errors.weight || !!errors.reps;
@@ -94,7 +96,7 @@ export function WorkoutForm({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {gap: 16},
   error: {
     color: colors.danger,

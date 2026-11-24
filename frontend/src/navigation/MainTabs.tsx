@@ -6,7 +6,8 @@ import Progress from '../assets/navigation/progress.svg';
 import ProgressSelected from '../assets/navigation/progress-selected.svg';
 import You from '../assets/navigation/you.svg';
 import YouSelected from '../assets/navigation/you-selected.svg';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export type MainTab = 'train' | 'progress' | 'you';
 
@@ -21,6 +22,8 @@ export function MainTabs({activeTab, disabled = false, onSelect}: {
   disabled?: boolean;
   onSelect: (tab: MainTab) => void;
 }) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View accessibilityRole="tablist" accessibilityLabel="Main navigation" style={styles.bar}>
       {tabs.map(tab => {
@@ -36,7 +39,7 @@ export function MainTabs({activeTab, disabled = false, onSelect}: {
             onPress={() => onSelect(tab.id)}
             style={({pressed}) => [styles.tab, pressed && styles.pressed]}
           >
-            <View style={styles.icon}><Icon accessible={false} /></View>
+            <View style={styles.icon}><Icon accessible={false} color={selected ? colors.green : colors.muted} /></View>
             <Text style={[styles.label, selected && styles.selected]}>{tab.label}</Text>
           </Pressable>
         );
@@ -45,7 +48,7 @@ export function MainTabs({activeTab, disabled = false, onSelect}: {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     flexShrink: 0,

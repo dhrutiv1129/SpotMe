@@ -5,7 +5,8 @@ import {ExerciseGuideScreen} from '../screens/ExerciseGuideScreen';
 import type {ExerciseGuide} from '../screens/ExerciseGuideScreen';
 import {WorkoutLogScreen} from '../screens/WorkoutLogScreen';
 import type {WorkoutReview} from '../screens/WorkoutReviewScreen';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import {WorkoutCompletionNavigator} from './WorkoutCompletionNavigator';
 
 export interface ExerciseSwapView extends Omit<React.ComponentProps<typeof AlternativesModel>, 'onViewGuide' | 'onBack'> {
@@ -30,6 +31,8 @@ export function WorkoutSessionNavigator(props: Props) {
 }
 
 function SessionFlow({sessionId, activeWorkout, loadReview, completion, swap}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [review, setReview] = useState<WorkoutReview | null>(null);
   const [alternatives, setAlternatives] = useState<ExerciseSwapView | null>(null);
   const [guide, setGuide] = useState<ExerciseGuide | null>(null);
@@ -156,7 +159,7 @@ function SessionFlow({sessionId, activeWorkout, loadReview, completion, swap}: P
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   hidden: {display: 'none'},
   loading: {padding: 12},

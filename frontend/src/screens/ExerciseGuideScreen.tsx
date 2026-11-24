@@ -4,7 +4,8 @@ import Back from '../assets/guide/back.svg';
 import Close from '../assets/guide/close.svg';
 import ShieldCheck from '../assets/guide/shield-check.svg';
 import {Button} from '../components/WorkoutControls';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface ExerciseGuide {
   exerciseId: string;
@@ -24,6 +25,8 @@ interface Props {
 
 /** Shows the guide for the selected exercise. */
 export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercise}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const writeInFlight = useRef(false);
@@ -47,11 +50,11 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to exercise alternatives" onPress={onBack} disabled={busy} style={styles.back}>
-          <Back accessible={false} />
+          <Back accessible={false} color={colors.ink} />
           <Text style={styles.backLabel}>Exercise guide</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Close guide and keep current exercise" onPress={onKeepExercise} disabled={busy} style={styles.close}>
-          <Close accessible={false} />
+          <Close accessible={false} color={colors.ink} />
         </Pressable>
       </View>
       <View style={styles.hero}>
@@ -70,7 +73,7 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
         ))}
       </View>
       <View style={styles.note}>
-        <ShieldCheck accessible={false} />
+        <ShieldCheck accessible={false} color={colors.warning} />
         <Text style={[styles.body, styles.noteText]}>Warm up first. Stop if you feel pain.</Text>
       </View>
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
@@ -84,7 +87,7 @@ export function ExerciseGuideScreen({guide, onBack, onKeepExercise, onUseExercis
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
@@ -94,15 +97,15 @@ const styles = StyleSheet.create({
   body: {color: colors.muted, fontSize: 13, lineHeight: 20},
   hero: {backgroundColor: colors.hero, borderRadius: 22, padding: 20, gap: 16},
   eyebrow: {color: colors.lime, fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase'},
-  heroTitle: {color: colors.surface, fontSize: 32, lineHeight: 36, fontWeight: '700', letterSpacing: -1.2},
-  heroBody: {color: colors.pale, fontSize: 13},
+  heroTitle: {color: colors.onHero, fontSize: 32, lineHeight: 36, fontWeight: '700', letterSpacing: -1.2},
+  heroBody: {color: colors.heroMuted, fontSize: 13},
   target: {color: colors.lime, fontSize: 15},
   section: {gap: 10},
   sectionTitle: {color: colors.ink, fontSize: 16, fontWeight: '700'},
   cue: {flexDirection: 'row', gap: 12, alignItems: 'flex-start'},
   cueNumber: {color: colors.green, backgroundColor: colors.pale, borderRadius: 10, width: 28, height: 28, lineHeight: 28, textAlign: 'center', fontSize: 11, fontWeight: '700'},
   cueText: {flex: 1, paddingTop: 4},
-  note: {backgroundColor: '#F7EDD8', borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10},
+  note: {backgroundColor: colors.warningSoft, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10},
   noteText: {flex: 1},
   actions: {gap: 12},
   keep: {minHeight: 44, justifyContent: 'center', alignItems: 'center'},

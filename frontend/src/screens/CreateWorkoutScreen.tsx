@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Button, NumberField } from '../components/WorkoutControls';
 import type { Exercise } from '../beta/api';
-import { colors } from '../theme';
+import { useTheme, useThemedStyles } from '../theme';
+import type { ThemeColors } from '../theme';
 import Brand from '../assets/create/brand.svg';
 import LibraryBrand from '../assets/create/library-brand.svg';
 import Search from '../assets/create/search.svg';
@@ -63,6 +64,8 @@ export function CreateWorkoutScreen({
   onSave,
   onCancel,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [equipment, setEquipment] = useState('All equipment');
@@ -159,10 +162,12 @@ export function CreateWorkoutScreen({
           </Text>
         </View>
         <View style={styles.search}>
-          <Search accessible={false} />
+          <Search accessible={false} color={colors.muted} />
           <TextInput
             accessibilityLabel="Search exercises"
             placeholder="Search exercises"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.green}
             value={query}
             onChangeText={setQuery}
             style={styles.searchInput}
@@ -240,7 +245,7 @@ export function CreateWorkoutScreen({
                 style={[styles.result, checked && styles.resultSelected]}
               >
                 <View style={styles.thumbnail}>
-                  <ExerciseIcon accessible={false} />
+                  <ExerciseIcon accessible={false} color={colors.green} />
                 </View>
                 <View style={styles.resultCopy}>
                   <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -326,6 +331,8 @@ export function CreateWorkoutScreen({
         <TextInput
           accessibilityLabel="Workout name"
           placeholder="Name your workout"
+          placeholderTextColor={colors.muted}
+          selectionColor={colors.green}
           value={value.name}
           maxLength={100}
           onChangeText={(name) => onChange({ ...value, name })}
@@ -341,7 +348,7 @@ export function CreateWorkoutScreen({
         {!value.exercises.length && (
           <View style={styles.empty}>
             <View style={styles.emptySymbol}>
-              <EmptyExercise accessible={false} />
+              <EmptyExercise accessible={false} color={colors.green} />
             </View>
             <Text style={styles.emptyTitle}>No exercises</Text>
           </View>
@@ -474,7 +481,7 @@ export function CreateWorkoutScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: {
     paddingHorizontal: 22,
@@ -493,7 +500,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 11,
-    backgroundColor: colors.green,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -607,7 +614,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 15,
   },
-  resultSelected: { borderColor: colors.green, backgroundColor: '#F0F4EA' },
+  resultSelected: { borderColor: colors.green, backgroundColor: colors.selected },
   thumbnail: {
     width: 58,
     height: 58,

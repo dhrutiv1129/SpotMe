@@ -13,7 +13,8 @@ import {WorkoutHistoryScreen} from '../screens/WorkoutHistoryScreen';
 import type {WorkoutHistoryView} from '../screens/WorkoutHistoryScreen';
 import {WeeklyGoalScreen} from '../screens/WeeklyGoalScreen';
 import type {WeeklyGoalView} from '../screens/WeeklyGoalScreen';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 interface Props {
   strength: StrengthProgressView;
@@ -37,6 +38,8 @@ export function ProgressNavigator({
   strength, consistency, history, loadWorkout,
   searchExercises, loadStrength, onEditGoal, goalEditor, onChangeMonth, onViewDay, onLoadMoreHistory,
 }: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [tab, setTab] = useState<'strength' | 'consistency'>('strength');
   const [selectedStrength, setSelectedStrength] = useState(strength);
   const [choosingExercise, setChoosingExercise] = useState(false);
@@ -186,7 +189,7 @@ export function ProgressNavigator({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   loading: {padding: 12},
   error: {color: colors.danger, fontSize: 13, lineHeight: 19, padding: 16},

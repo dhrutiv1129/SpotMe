@@ -11,7 +11,8 @@ import {Button, NumberField, Sheet} from '../components/WorkoutControls';
 import type {ExerciseView, LoggedSet} from '../components/ExerciseRow';
 import {WorkoutForm, validateSetInput} from '../components/WorkoutForm';
 import type {SetInput} from '../components/WorkoutForm';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 import Back from '../assets/workout/back.svg';
 import Pause from '../assets/workout/pause.svg';
 import Timer from '../assets/workout/timer.svg';
@@ -66,6 +67,8 @@ interface Props {
 
 /** Uses totals and status from the backend. Keeps unsaved input and open dialogs here. */
 export function WorkoutLogScreen(props: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (props.loading) {
     return (
       <View style={styles.center}>
@@ -103,6 +106,8 @@ function ActiveWorkout({
   workout,
   ...actions
 }: Omit<Props, 'workout'> & {workout: WorkoutView}) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {exercise} = workout;
   const nextExercise = workout.nextExercise;
   const [weight, setWeight] = useState(exercise.draft.weight);
@@ -185,7 +190,7 @@ function ActiveWorkout({
             disabled={busy}
             style={styles.topButton}
           >
-            <Back accessible={false} />
+            <Back accessible={false} color={colors.ink} />
             <Text style={styles.topTitle}>Your workout</Text>
           </Pressable>
           <Pressable
@@ -200,7 +205,7 @@ function ActiveWorkout({
               );
             }}
           >
-            <Pause accessible={false} />
+            <Pause accessible={false} color={colors.ink} />
           </Pressable>
         </View>
 
@@ -285,7 +290,7 @@ function ActiveWorkout({
             style={styles.nextCard}
           >
             <View style={styles.exerciseIcon}>
-              <Dumbbell accessible={false} />
+              <Dumbbell accessible={false} color={colors.ink} />
             </View>
             <View style={styles.nextCopy}>
               <Text style={styles.nextName}>{workout.nextExercise.name}</Text>
@@ -293,7 +298,7 @@ function ActiveWorkout({
                 {workout.nextExercise.targetLabel}
               </Text>
             </View>
-            <Next accessible={false} />
+            <Next accessible={false} color={colors.muted} />
           </Pressable>
         )}
         <Button
@@ -540,7 +545,7 @@ function ActiveWorkout({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   timer: {flexDirection: 'row', alignItems: 'center', gap: 6},
@@ -586,7 +591,7 @@ const styles = StyleSheet.create({
   },
   heroTime: {color: '#D4DDD1', fontSize: 12},
   heroTitle: {
-    color: colors.surface,
+    color: colors.onHero,
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.5,

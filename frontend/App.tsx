@@ -32,7 +32,9 @@ import type {
 } from "./src/beta/api";
 import { loadDraft, newDraft, payload, persistDraft, resumeDraft, pauseDraft, resetWorkout, workoutTargets, workoutCounts } from "./src/beta/draft";
 import type { Draft } from "./src/beta/draft";
-import { colors } from "./src/theme";
+import { useTheme, useThemedStyles } from "./src/theme";
+import type { ThemeColors } from "./src/theme";
+import { AppearanceSettings } from "./src/components/AppearanceSettings";
 import { MainTabs } from "./src/navigation/MainTabs";
 import type { MainTab } from "./src/navigation/MainTabs";
 import { SavedWorkoutPlansScreen } from "./src/screens/SavedWorkoutPlansScreen";
@@ -66,6 +68,8 @@ const volume = (workout: { exercises: Draft["exercises"] }) =>
   );
 
 export default function App() {
+  const {colors, mode} = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
@@ -461,6 +465,8 @@ export default function App() {
           <TextInput
             accessibilityLabel="Email"
             placeholder="Email"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.green}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -471,6 +477,8 @@ export default function App() {
           <TextInput
             accessibilityLabel="Password"
             placeholder="Password"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.green}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -550,6 +558,7 @@ export default function App() {
           <Text style={styles.heading}>Your account</Text>
           <Text style={styles.body}>{user.email}</Text>
         </View>
+        <AppearanceSettings />
         <Button label="Workout history" variant="secondary" onPress={() => { void showHistory(); }} />
         <Text style={styles.small}>Workout loads use pounds (lb) in the current backend.</Text>
         <Button label="Sign out" variant="text" disabled={busy} onPress={() => { void logout(); }} />
@@ -678,7 +687,7 @@ export default function App() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       {!["home", "create", "workout", "review", "saved", "progressHome", "progress", "history", "detail", "strengthDetail", "consistency", "consistencyDetail"].includes(screen) && <View style={styles.nav}>
         <Pressable
           accessibilityRole="button"
@@ -778,6 +787,7 @@ function Chip({
   selected?: boolean;
   disabled?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -792,7 +802,7 @@ function Chip({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
@@ -861,8 +871,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.hero,
     gap: 16,
   },
-  heroTitle: { fontSize: 28, fontWeight: "700", color: colors.surface },
-  heroText: { fontSize: 15, lineHeight: 23, color: colors.pale },
+  heroTitle: { fontSize: 28, fontWeight: "700", color: colors.onHero },
+  heroText: { fontSize: 15, lineHeight: 23, color: colors.heroMuted },
   card: {
     padding: 20,
     borderRadius: 18,
@@ -880,9 +890,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  chipSelected: { backgroundColor: colors.green, borderColor: colors.green },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontSize: 14, color: colors.ink },
-  chipTextSelected: { color: colors.surface },
+  chipTextSelected: { color: colors.onPrimary },
   error: {
     color: colors.danger,
     backgroundColor: colors.dangerSoft,

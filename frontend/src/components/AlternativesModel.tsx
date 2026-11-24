@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import {Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Button} from './WorkoutControls';
-import {colors} from '../theme';
+import {useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface ExerciseAlternative {
   id: string;
@@ -30,6 +31,7 @@ export function AlternativesModel({
   onViewGuide, onBack, selectedExerciseId, onSelectExercise,
   onEditEquipment,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
   const selectedId = selectedExerciseId === undefined ? localSelectedId : selectedExerciseId;
   const selected = alternatives.find((exercise) => exercise.id === selectedId);
@@ -107,6 +109,7 @@ function difficultyLabel(value: string) {
 }
 
 function AlternativePhoto({exercise}: {exercise: ExerciseAlternative}) {
+  const styles = useThemedStyles(createStyles);
   const [failed, setFailed] = useState(false);
   // Match the catalog identity so rank changes never change the exercise photo
   const source = exercise.imageUri ? {uri: exercise.imageUri} :
@@ -115,28 +118,28 @@ function AlternativePhoto({exercise}: {exercise: ExerciseAlternative}) {
     <View style={[styles.image, styles.photoPlaceholder]}><Text style={styles.photoCaption}>Photo unavailable</Text></View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28, gap: 14},
   back: {minHeight: 44, justifyContent: 'center', marginBottom: 10},
   backLabel: {color: colors.ink, fontSize: 15, fontWeight: '700'},
   title: {color: colors.ink, fontSize: 32, fontWeight: '700', letterSpacing: -0.7, marginBottom: 8},
-  replacing: {backgroundColor: colors.ink, borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', gap: 12},
-  replacingText: {color: colors.surface, fontSize: 13, flex: 1},
+  replacing: {backgroundColor: colors.hero, borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', gap: 12},
+  replacingText: {color: colors.onHero, fontSize: 13, flex: 1},
   target: {color: colors.lime, fontSize: 13},
   equipment: {gap: 10, marginVertical: 8},
   label: {color: colors.ink, fontSize: 13, fontWeight: '700'},
   badges: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   badge: {color: colors.green, backgroundColor: colors.pale, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 6, fontSize: 10, fontWeight: '600'},
   card: {backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 20, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 150},
-  selected: {borderColor: colors.green, borderWidth: 2, backgroundColor: '#F0F5E9'},
+  selected: {borderColor: colors.green, borderWidth: 2, backgroundColor: colors.selected},
   image: {width: 86, height: 124, borderRadius: 12},
   photoPlaceholder: {backgroundColor: colors.soft, alignItems: 'center', justifyContent: 'center', padding: 8},
   photoCaption: {color: colors.muted, fontSize: 11, textAlign: 'center'},
   cardContent: {flex: 1, gap: 8},
   difficulty: {alignSelf: 'flex-start', color: colors.green, backgroundColor: colors.pale, fontSize: 10, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6, fontWeight: '700'},
   easy: {color: colors.muted, backgroundColor: colors.soft},
-  hard: {color: '#8A6428', backgroundColor: '#F7EDD8'},
+  hard: {color: colors.warning, backgroundColor: colors.warningSoft},
   rank: {color: colors.green, fontSize: 11, fontWeight: '700', paddingVertical: 6},
   exerciseName: {color: colors.ink, fontSize: 18, fontWeight: '700'},
   between: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
@@ -147,6 +150,6 @@ const styles = StyleSheet.create({
   empty: {backgroundColor: colors.surface, borderRadius: 22, padding: 20, gap: 16},
   emptyTitle: {color: colors.ink, fontSize: 22, fontWeight: '700'},
   radio: {width: 22, height: 22, borderRadius: 11, borderColor: colors.border, borderWidth: 1, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center', marginTop: 18},
-  checked: {backgroundColor: colors.green, borderColor: colors.green},
-  check: {color: colors.surface, fontSize: 14},
+  checked: {backgroundColor: colors.primary, borderColor: colors.primary},
+  check: {color: colors.onPrimary, fontSize: 14},
 });

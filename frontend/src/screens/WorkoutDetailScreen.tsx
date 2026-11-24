@@ -3,7 +3,8 @@ import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Back from '../assets/history/back.svg';
 import {Button} from '../components/WorkoutControls';
 import type {LoggedSet} from '../components/ExerciseRow';
-import {colors} from '../theme';
+import {useTheme, useThemedStyles} from '../theme';
+import type {ThemeColors} from '../theme';
 
 export interface WorkoutDetailView {
   sessionId: string;
@@ -44,10 +45,12 @@ interface Props {
 
 /** Shows the saved workout and completed sets. */
 export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All workout history', onViewHistory, onViewExercise}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={onBackToHistory} style={styles.back}>
-        <Back accessible={false} />
+        <Back accessible={false} color={colors.ink} />
         <Text style={styles.backLabel}>{backLabel}</Text>
       </Pressable>
       <View style={styles.heading}>
@@ -104,7 +107,7 @@ export function WorkoutDetailScreen({workout, onBackToHistory, backLabel = 'All 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 26, gap: 22},
   back: {minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12},
@@ -116,8 +119,8 @@ const styles = StyleSheet.create({
   savedLabel: {color: colors.lime, fontSize: 11, fontWeight: '700'},
   metrics: {flexDirection: 'row', gap: 18},
   metric: {flex: 1, gap: 5},
-  heroValue: {color: colors.surface, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
-  heroCaption: {color: '#C1CCBD', fontSize: 11, lineHeight: 16},
+  heroValue: {color: colors.onHero, fontSize: 28, fontWeight: '700', letterSpacing: -0.8},
+  heroCaption: {color: colors.heroMuted, fontSize: 11, lineHeight: 16},
   section: {gap: 12},
   sectionTitle: {color: colors.ink, fontSize: 18, fontWeight: '700', letterSpacing: -0.4},
   comparison: {backgroundColor: colors.pale, borderRadius: 22, padding: 18, gap: 12},
